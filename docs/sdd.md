@@ -19,37 +19,96 @@ The system enforces a strict separation of concerns using **Domain-Driven Design
 The system follows a **Hexagonal Architecture** within a **Monorepo**, orchestrated by Docker Compose.
 
 ```mermaid
-graph TD
-    User((User)) --> Client[NextJS Frontend]
-    Client --> Gateway[API Gateway]
+graph TB
+    User((User))
+    Admin((Admin))
     
-    subgraph "Write Side (PostgreSQL)"
-        Gateway --> ID[Identity Service]
-        Gateway --> Char[Characteristic Service]
-        Gateway --> Spec[Specification Service]
-        Gateway --> Price[Pricing Service]
-        Gateway --> Offer[Offering Service]
+    Client[NextJS Frontend<br/>App Router + TailwindCSS]
+    StoreUI[Customer Catalog UI<br/>Search & Filter]
+    
+    User --> StoreUI
+    Admin --> Client
+    
+    Client --> Gateway[API Gateway<br/>Port: 8000]
+    StoreUI --> Gateway
+    
+    Gateway --> Auth[Identity Service<br/>JWT RS256]
+    Gateway --> CharSvc[Characteristic Service<br/>Resource Context]
+    Gateway --> SpecSvc[Specification Service<br/>Resource Context]
+    Gateway --> PriceSvc[Pricing Service<br/>Commercial Context]
+    Gateway --> OfferSvc[Offering Service<br/>Product Context]
+    Gateway --> StoreSvc[Store Query Service<br/>CQRS Read]
+    
+    subgraph WriteLayer["Write Layer (PostgreSQL 15+)"]
+        Auth --> AuthDB[(Auth DB<br/>Users)]
+        CharSvc --> CharDB[(Characteristic DB<br/>+ Outbox)]
+        SpecSvc --> SpecDB[(Specification DB<br/>+ Outbox)]
+        PriceSvc --> PriceDB[(Pricing DB<br/>+ Outbox)]
+        OfferSvc --> OfferDB[(Offering DB<br/>+ Outbox)]
     end
     
-    subgraph "Orchestration"
-        Offer -- "Start Saga" --> Camunda[Camunda Engine]
-        Camunda -- "Task" --> Price
-        Camunda -- "Task" --> Spec
-        Camunda -- "Task" --> Store
-    end
-
-    subgraph "Async Messaging"
-        Char -- "Event" --> RabbitMQ
-        Spec -- "Event" --> RabbitMQ
-        Offer -- "Event" --> RabbitMQ
+    subgraph EventMessaging["Transactional Outbox & Event Bus"]
+        CharDB -.->|NOTIFY| OutboxListener[Outbox Listener]
+        SpecDB -.->|NOTIFY| OutboxListener
+        PriceDB -.->|NOTIFY| OutboxListener
+        OfferDB -.->|NOTIFY| OutboxListener
+        OutboxListener -->|Publish Events| RabbitMQ[RabbitMQ<br/>Message Broker]
     end
     
-    subgraph "Read Side (NoSQL)"
-        RabbitMQ -- "Consume" --> Store[Store Query Service]
-        Store --> Elastic[(Mongo/Elastic)]
+    subgraph Orchestration["Saga Orchestration"]
+        OfferSvc -->|Start Process| Camunda[Camunda 7<br/>BPMN Engine]
+        Camunda -->|Lock Task| PriceSvc
+        Camunda -->|Validate Task| SpecSvc
+        Camunda -->|Index Task| StoreSvc
+        Camunda -->|Complete| OfferSvc
     end
     
-    Gateway --> Store
+    subgraph EventSubscriptions["Event Subscriptions"]
+        RabbitMQ -->|CharacteristicCreated| StoreSvc
+        RabbitMQ -->|SpecificationCreated| StoreSvc
+        RabbitMQ -->|OfferingPublished| StoreSvc
+        RabbitMQ -->|PriceUpdated| StoreSvc
+        RabbitMQ -->|CharacteristicDeleted| SpecSvc
+        RabbitMQ -->|PriceLocked| OfferSvc
+    end
+    
+    subgraph ReadLayer["Read Layer (MongoDB 7+ & Elasticsearch 8+)"]
+        StoreSvc --> MongoDB[(MongoDB<br/>Published Offerings<br/>Denormalized)]
+        StoreSvc --> Elasticsearch[(Elasticsearch<br/>Full-text Search<br/>Facets)]
+    end
+    
+    subgraph Observability["Observability Stack"]
+        Gateway -->|Trace Context| Zipkin[Zipkin<br/>Distributed Tracing]
+        CharSvc -->|JSON Logs| ELK[ELK Stack<br/>Logstash + Elasticsearch + Kibana]
+        SpecSvc -->|JSON Logs| ELK
+        PriceSvc -->|JSON Logs| ELK
+        OfferSvc -->|JSON Logs| ELK
+        StoreSvc -->|JSON Logs| ELK
+        Auth -->|JSON Logs| ELK
+        Camunda -->|Logs| ELK
+    end
+    
+    subgraph SharedLibs["Shared Chassis Library<br/>libs/common-python"]
+        Logging["Logging Module<br/>+ Correlation IDs"]
+        Security["Security Module<br/>JWT Validation"]
+        Messaging["Messaging Module<br/>Publisher/Consumer"]
+        OutboxModule["Outbox Module<br/>LISTEN/NOTIFY"]
+    end
+    
+    CharSvc -.->|Uses| SharedLibs
+    SpecSvc -.->|Uses| SharedLibs
+    PriceSvc -.->|Uses| SharedLibs
+    OfferSvc -.->|Uses| SharedLibs
+    StoreSvc -.->|Uses| SharedLibs
+    Auth -.->|Uses| SharedLibs
+    
+    style Gateway fill:#ff9999
+    style WriteLayer fill:#99ccff
+    style ReadLayer fill:#99ff99
+    style Orchestration fill:#ffcc99
+    style EventMessaging fill:#ff99ff
+    style Observability fill:#ffffcc
+    style SharedLibs fill:#e6e6e6
 ```
 
 ---
