@@ -5,120 +5,536 @@ Here is your **Incremental Roadmap**.
 ## PART I: BACKEND INFRASTRUCTURE & CORE (The Foundation)
 
 ### Phase 1: The Monorepo Skeleton & Infrastructure
+
 **Goal:** Establish the physical environment where code lives and runs.
+
 *   Initialize the `uv` monorepo workspace and Git repository.
-*   Create the master `docker-compose.yml` defining all infrastructure (Postgres, RabbitMQ, Mongo, Camunda, Zipkin, Keycloak/Auth).
-*   Create a "Hello World" service (`api-gateway`) just to prove that Python can talk to Docker and ports are exposed correctly.
-*   **Verification:** `docker-compose up` runs without exiting. You can curl the Gateway and get a 200 OK.
+*   Create the master `docker-compose.yml` defining all infrastructure:
+    *   PostgreSQL 15+ (Write databases)
+    *   RabbitMQ (Message broker with Management UI)
+    *   MongoDB 7+ (Read store for CQRS)
+    *   Elasticsearch 8+ (Search index)
+    *   Camunda 7 (BPMN workflow engine)
+    *   Zipkin (Distributed tracing)
+    *   ELK Stack (Elasticsearch, Logstash, Kibana for log aggregation)
+*   Create a simple health check service to verify infrastructure connectivity.
+*   **Verification:** `docker-compose up` runs without exiting. All services healthy. RabbitMQ Management UI accessible at :15672.
 
 ### Phase 2: The Shared Chassis (Library)
+
 **Goal:** Define *how* code is written so we don't repeat ourselves.
+
 *   Create `libs/common-python`.
-*   Implement standard **Structured Logging** (JSON format).
-*   Implement **Configuration Management** (Pydantic settings reading from Envs).
-*   Implement the **Standard Exception Hierarchy** (Not Found, Validation Error, Domain Error).
-*   **Verification:** Write a unit test in the library that logs a JSON message and handles a custom exception.
+*   Implement standard **Structured Logging** (JSON format with service name, timestamp, level, correlation_id, trace_id).
+*   Implement **Configuration Management** (Pydantic settings reading from environment variables).
+*   Implement the **Standard Exception Hierarchy**:
+    *   `ValidationError` → 400 Bad Request
+    *   `NotFoundError` → 404 Not Found
+    *   `ConflictError` → 409 Conflict
+    *   `ServiceUnavailableError` → 503 Service Unavailable
+*   Implement standard **Error Response Format** with correlation ID.
+*   **Verification:** Write unit tests in the library that log a JSON message and handle custom exceptions correctly.
 
 ### Phase 3: Identity & Security (Zero Trust)
-**Goal:** secure the system before building business logic.
-*   Implement the **Identity Service** (or configure Keycloak).
-*   Define the **JWT Schema** (User ID, Roles).
-*   Update the `common-python` Chassis with a `verify_jwt` dependency.
-*   **Verification:** Generate a token via `POST /login`. Use that token to hit a protected endpoint in the "Hello World" gateway. Fail without token. Pass with token.
+
+**Goal:** Secure the system before building business logic.
+
+*   Implement the **Identity Service** (Custom JWT Service - Option A for simplicity):
+    *   User table (id, username, password_hash, role)
+    *   Hardcoded users for demo: admin/admin (ADMIN role), user/user (USER role)
+    *   Password hashing with bcrypt (cost factor 12)
+    *   JWT signing with RS256 (asymmetric keys)
+    *   Token lifetime: 1 hour
+*   Define the **JWT Schema** (sub, username, role, iat, exp).
+*   Expose `GET /api/v1/auth/public-key` for other services.
+*   Update `common-python` Chassis with:
+    *   `verify_jwt` FastAPI dependency
+    *   Role-based authorization helpers
+    *   `UnauthorizedException` and `ForbiddenException`
+*   **Verification:** 
+    *   `POST /api/v1/auth/login` returns JWT token.
+    *   Protected endpoint returns 401 without token.
+    *   Protected endpoint returns 200 with valid token.
+    *   Admin-only endpoint returns 403 for USER role.
+
+### Phase 4: Database Migrations Setup
+
+**Goal:** Establish database schema management with Alembic.
+
+*   Set up Alembic for each service's database schema.
+*   Create initial migration scripts for Identity Service.
+*   Establish migration patterns for the monorepo (per-service migrations).
+*   **Verification:** `alembic upgrade head` creates tables. `alembic downgrade -1` rolls back.
 
 ---
 
 ## PART II: DOMAIN IMPLEMENTATION (Clean Architecture)
 
-### Phase 4: The First Vertical Slice (Characteristic Service)
-**Goal:** Establish the pattern for **Clean Architecture** (Domain -> Application -> Infra).
+### Phase 5: The First Vertical Slice (Characteristic Service)
+
+**Goal:** Establish the pattern for **Clean Architecture** (Domain → Application → Infrastructure).
+
 *   Implement `Characteristic Service` (Write side).
-*   Define Domain Entities (`Characteristic`) and Pydantic DTOs.
-*   Implement Repository layer with SQLAlchemy (Postgres).
+*   Structure:
+    *   **Domain Layer:** `Characteristic` entity with business rules (name unique, valid unit enum).
+    *   **Application Layer:** Use cases (CreateCharacteristic, UpdateCharacteristic, DeleteCharacteristic).
+    *   **Infrastructure Layer:** SQLAlchemy repository, FastAPI routes.
+*   Define Pydantic DTOs for API request/response.
+*   Implement validation rules:
+    *   Name: Required, 1-200 characters, alphanumeric with spaces
+    *   Value: Required, 1-100 characters
+    *   UnitOfMeasure: Required, enum [Mbps, GB, GHz, Volt, Watt, Meter, None]
+*   Implement Health Check endpoint: `GET /health`.
 *   **Crucial:** Do **NOT** implement Outbox or RabbitMQ yet. Just pure CRUD.
-*   **Verification:** `pytest` passes for Domain logic. `curl` to create and read a Characteristic from Postgres.
+*   **Verification:** 
+    *   `pytest` passes for Domain logic (business rules, validation).
+    *   `curl` to create, read, update, delete a Characteristic.
+    *   Duplicate name returns 409 Conflict.
 
-### Phase 5: The Event Engine (Transactional Outbox)
+### Phase 6: The Event Engine (Transactional Outbox)
+
 **Goal:** Enable reliable async messaging without breaking the DB transaction.
-*   Extend `common-python` with the **Outbox Table Model**.
-*   Implement the **Postgres LISTEN/NOTIFY** listener (background thread).
-*   Implement the **RabbitMQ Publisher** wrapper.
-*   Update `Characteristic Service` to write to Outbox on create/update.
-*   **Verification:** Create a Characteristic via API. Check Postgres `outbox` table (status: SENT). Check RabbitMQ Management UI to see the message in the queue.
 
-### Phase 6: Dependency Management (Specification Service)
+*   Extend `common-python` with:
+    *   **Outbox Table Model** (id, topic, payload, status, created_at).
+    *   **Postgres LISTEN/NOTIFY** listener (background thread/asyncio task).
+    *   **RabbitMQ Publisher** wrapper with retry logic (3 attempts, exponential backoff).
+    *   **Event Schema** with version, event_id, event_type, timestamp, correlation_id, payload.
+*   Create SQL migration for Outbox table with trigger:
+    ```sql
+    CREATE TRIGGER outbox_notify AFTER INSERT ON outbox
+    FOR EACH ROW EXECUTE FUNCTION notify_outbox();
+    ```
+*   Update `Characteristic Service` to:
+    *   Write to Outbox on create → `CharacteristicCreated`
+    *   Write to Outbox on update → `CharacteristicUpdated`
+    *   Write to Outbox on delete → `CharacteristicDeleted`
+*   **Verification:** 
+    *   Create a Characteristic via API.
+    *   Check Postgres `outbox` table (status: SENT).
+    *   Check RabbitMQ Management UI for message in `resource.characteristics.events` queue.
+
+### Phase 7: Dependency Management (Specification Service)
+
 **Goal:** Handle cross-service synchronous dependencies.
-*   Implement `Specification Service` (Write side).
-*   Implement the "Synchronous Validator" (HTTP Client) that calls Characteristic Service to check if IDs exist.
-*   Implement Domain Logic: "A spec must have at least 1 characteristic."
-*   **Verification:** Try to create a Spec with a fake Char ID (should fail 400). Create with real ID (should pass 201).
 
-### Phase 7: Commercial Domain (Pricing Service)
-**Goal:** Handle the money domain.
-*   Implement `Pricing Service`.
-*   Add the `locked` boolean field to the database schema (preparation for Saga).
-*   Implement basic CRUD.
-*   **Verification:** Create a Price. Update it. Delete it. Standard Component tests.
+*   Implement `Specification Service` (Write side) following same Clean Architecture.
+*   Implement the **Synchronous Validator** (HTTP Client with timeout):
+    *   Calls Characteristic Service to validate each characteristic ID exists.
+    *   Timeout: 5 seconds connection, 10 seconds read.
+    *   Returns 400 with list of invalid IDs if any don't exist.
+    *   Returns 503 if Characteristic Service unreachable.
+*   Implement Domain Logic:
+    *   "A spec must have at least 1 characteristic."
+    *   "Name must be unique."
+    *   "Cannot delete if referenced by Offerings."
+*   Apply **Outbox Pattern** for events:
+    *   `SpecificationCreated`, `SpecificationUpdated`, `SpecificationDeleted`
+*   **Verification:** 
+    *   Create Spec with fake Char ID → 400 Bad Request (include invalid IDs).
+    *   Create Spec with real Char IDs → 201 Created.
+    *   Stop Characteristic container, create Spec → 503 Service Unavailable.
 
-### Phase 8: The Aggregate Root (Offering Service - Part 1)
-**Goal:** Manage the complex Lifecycle State Machine (Draft/Published).
-*   Implement `Offering Service`.
-*   Implement the State Machine Logic (DRAFT -> PUBLISHING -> PUBLISHED).
-*   Implement validation: "Cannot publish without Spec ID and Price ID."
-*   **Note:** Do not implement Camunda yet. Just mock the `publish()` method to simply change the state for now.
-*   **Verification:** Create an Offering (Draft). Add Specs/Prices. Try to "Publish" (State changes).
+### Phase 8: Commercial Domain (Pricing Service)
+
+**Goal:** Handle the money domain with Saga lock support.
+
+*   Implement `Pricing Service` following Clean Architecture.
+*   Domain Model fields:
+    *   id (UUID), name (unique), value (Decimal, positive, max 2 decimals)
+    *   unit (string, e.g., "per month"), currency (enum: USD, EUR, TRY)
+    *   locked (boolean), locked_by_saga_id (UUID, nullable)
+    *   createdAt, updatedAt
+*   Implement endpoints:
+    *   CRUD operations
+    *   `POST /api/v1/prices/{id}/lock` - Lock for Saga
+    *   `POST /api/v1/prices/{id}/unlock` - Unlock (compensating transaction)
+*   Validation: Locked prices cannot be deleted or modified → 423 Locked.
+*   Apply **Outbox Pattern** for events:
+    *   `PriceCreated`, `PriceUpdated`, `PriceDeleted`, `PriceLocked`, `PriceUnlocked`
+*   **Verification:** 
+    *   Create, update, delete Price.
+    *   Lock price → locked=true.
+    *   Try to delete locked price → 423 Locked.
+    *   Unlock price → locked=false.
+
+### Phase 9: The Aggregate Root (Offering Service - Part 1)
+
+**Goal:** Manage the complex Lifecycle State Machine.
+
+*   Implement `Offering Service` following Clean Architecture.
+*   Domain Model (Aggregate Root):
+    *   id, name, description, specificationIds[], pricingIds[], salesChannels[]
+    *   lifecycleStatus (enum: DRAFT, PUBLISHING, PUBLISHED, RETIRED)
+    *   createdAt, updatedAt, publishedAt, retiredAt
+*   Implement **State Machine Logic**:
+    ```
+    DRAFT → PUBLISHING → PUBLISHED → RETIRED
+      ↑         ↓
+      └─── (saga fails)
+    ```
+*   Domain Methods:
+    *   `canPublish()`: Returns validation result (needs 1+ spec, 1+ price, 1+ channel).
+    *   `publish()`: Validates, transitions to PUBLISHING (will later trigger Camunda).
+    *   `confirmPublication()`: Transitions PUBLISHING → PUBLISHED.
+    *   `failPublication()`: Transitions PUBLISHING → DRAFT.
+    *   `retire()`: Transitions PUBLISHED → RETIRED.
+*   Implement validation:
+    *   Cross-service: Validate Spec IDs exist (HTTP to Specification Service).
+    *   Cross-service: Validate Price IDs exist (HTTP to Pricing Service).
+*   Apply **Outbox Pattern** for events:
+    *   `OfferingCreated`, `OfferingUpdated`, `OfferingPublicationInitiated`
+    *   `OfferingPublished`, `OfferingPublicationFailed`, `OfferingRetired`
+*   **Note:** Mock the `publish()` to simply change state for now (no Camunda yet).
+*   **Verification:** 
+    *   Create Offering (DRAFT).
+    *   Update with Specs/Prices/Channels.
+    *   Publish without requirements → 400 Bad Request.
+    *   Publish with all requirements → State changes to PUBLISHING → PUBLISHED (mocked).
 
 ---
 
 ## PART III: ADVANCED PATTERNS (CQRS & SAGA)
 
-### Phase 9: The Read Model (Store Service & CQRS)
-**Goal:** Make data viewable and searchable (Syncing Data).
-*   Implement `Store Query Service`.
-*   Implement **RabbitMQ Consumers** for `CharacteristicCreated`, `SpecCreated`, `PriceCreated`, `OfferingPublished`.
-*   Implement the Logic: When an event arrives, update the **MongoDB/Elastic** document.
-*   **Verification:** Create a Char/Spec/Price/Offering in the Write APIs. Wait 1 second. Query the Store API to see the aggregated object.
+### Phase 10: The Read Model (Store Service & CQRS)
 
-### Phase 10: The API Gateway & Resilience
+**Goal:** Make data viewable and searchable (Event-Driven Synchronization).
+
+*   Implement `Store Query Service` (Read side of CQRS).
+*   Data stores:
+    *   **MongoDB:** Denormalized `PublishedOffering` documents.
+    *   **Elasticsearch:** Full-text search index with facets.
+*   Implement **RabbitMQ Consumers** for ALL events:
+    *   `CharacteristicCreated`, `CharacteristicUpdated`, `CharacteristicDeleted`
+    *   `SpecificationCreated`, `SpecificationUpdated`, `SpecificationDeleted`
+    *   `PriceCreated`, `PriceUpdated`, `PriceDeleted`
+    *   `OfferingPublished`, `OfferingRetired`
+*   Implement **Idempotency**:
+    *   Store processed event IDs in separate MongoDB collection.
+    *   Skip processing if event already handled.
+*   Event Handler Logic:
+    *   On `OfferingPublished`: Fetch full data via HTTP, create denormalized document, index in Elasticsearch.
+    *   On `OfferingRetired`: Remove from MongoDB and Elasticsearch.
+    *   On `Characteristic/Spec/Price Updated`: Find affected offerings, re-fetch, update documents.
+*   Implement Search API:
+    *   `GET /api/v1/store/offerings` - List with pagination.
+    *   `GET /api/v1/store/offerings/{id}` - Single offering detail.
+    *   `GET /api/v1/store/search` - Full-text search with filters.
+*   Search Capabilities:
+    *   Full-text search across name, description, characteristic values.
+    *   Price range filter (min/max).
+    *   Characteristic facets (e.g., speed >= 100 Mbps).
+    *   Sort by price, name, published date.
+*   **Verification:** 
+    *   Create Char/Spec/Price/Offering in Write APIs.
+    *   Publish Offering.
+    *   Wait 1-2 seconds (eventual consistency).
+    *   Query Store API → See aggregated, denormalized object.
+    *   Search with filters → Correct results returned.
+
+### Phase 11: The API Gateway & Resilience
+
 **Goal:** Unify the entry point and protect the system.
-*   Update `api-gateway` to route to all 5 real services.
-*   Implement **Circuit Breakers** (pybreaker) for the Specification -> Characteristic synchronous call.
-*   **Verification:** Stop the Characteristic container. Call the Gateway. It should return a "Service Unavailable" JSON immediately, not hang.
 
-### Phase 11: Distributed Transactions (The Saga)
+*   Implement full `api-gateway` routing to all 6 services:
+    *   `/api/v1/auth/*` → Identity Service
+    *   `/api/v1/characteristics/*` → Characteristic Service
+    *   `/api/v1/specifications/*` → Specification Service
+    *   `/api/v1/prices/*` → Pricing Service
+    *   `/api/v1/offerings/*` → Offering Service
+    *   `/api/v1/store/*` → Store Query Service
+*   Implement **Circuit Breakers** (pybreaker) for ALL downstream services:
+    *   Failure threshold: 5 consecutive failures
+    *   Open circuit duration: 30 seconds
+    *   Half-open test requests: 3
+*   Implement **Timeouts**:
+    *   Connection timeout: 5 seconds
+    *   Read timeout: 10 seconds
+*   Implement **CORS Handler** for frontend.
+*   Implement **Correlation ID** management:
+    *   Generate `X-Correlation-ID` if not present.
+    *   Forward to all downstream services.
+*   Implement **Health Endpoints**:
+    *   `GET /health` - Gateway health.
+    *   `GET /health/dependencies` - All downstream services status.
+*   **Verification:** 
+    *   Route requests correctly to all services.
+    *   Stop Characteristic container → Gateway returns 503 immediately (circuit open).
+    *   Restart container → Circuit closes, requests succeed.
+
+### Phase 12: Distributed Transactions (The Saga)
+
 **Goal:** The "Boss Level" - Orchestrating the Publish flow.
-*   Deploy the BPMN diagram to **Camunda**.
-*   Implement **Python Workers** in Pricing (Lock), Spec (Validate), and Store (Create Entry).
-*   Update `Offering Service` to trigger the Camunda process instead of changing state directly.
-*   **Verification:** Click "Publish". Watch Camunda Cockpit. See tokens move. Check Price is "Locked". Check State becomes "PUBLISHED".
 
-### Phase 12: Observability & Tracing
+*   Create and deploy **BPMN diagram** to Camunda:
+    *   Process name: `offering-publication-saga`
+    *   External tasks with topics: `lock-prices`, `validate-specifications`, `create-store-entry`, `confirm-publication`
+*   Implement **Python External Task Workers**:
+    *   **Pricing Service Worker** (topic: `lock-prices`):
+        *   Lock all prices for the offering.
+        *   On failure: Fail task, trigger compensation.
+    *   **Specification Service Worker** (topic: `validate-specifications`):
+        *   Verify all specs still exist and are valid.
+        *   On failure: Fail task.
+    *   **Store Service Worker** (topic: `create-store-entry`):
+        *   Pre-create denormalized document.
+        *   On failure: Fail task.
+    *   **Offering Service Worker** (topic: `confirm-publication`):
+        *   Update lifecycle to PUBLISHED, set publishedAt.
+        *   Publish `OfferingPublished` event.
+*   Implement **Compensating Transactions** (on saga failure):
+    *   Unlock all locked prices.
+    *   Delete partial store entry.
+    *   Revert offering to DRAFT.
+    *   Publish `OfferingPublicationFailed` event.
+*   Update `Offering Service` to trigger Camunda process instead of mock state change.
+*   **Verification:** 
+    *   Click "Publish" via API.
+    *   Watch Camunda Cockpit → See tokens move through tasks.
+    *   Check Prices are "Locked".
+    *   Check Offering state becomes "PUBLISHED".
+    *   Force a task failure → Verify compensation runs, offering reverts to DRAFT.
+
+### Phase 13: Observability & Tracing
+
 **Goal:** Prove you know what is happening inside.
-*   Enable **OpenTelemetry** in the Chassis.
-*   Ensure `Trace-ID` is passed from Gateway -> Service -> RabbitMQ -> Consumer.
-*   **Verification:** specific request in Zipkin UI. See the waterfall chart spanning HTTP and Async boundaries.
+
+*   Enable **OpenTelemetry** in the Shared Chassis:
+    *   Auto-instrumentation for FastAPI, HTTP clients, SQLAlchemy.
+    *   B3 trace context propagation via HTTP headers.
+    *   Trace context propagation via RabbitMQ message headers.
+*   Span naming convention:
+    *   HTTP: `{method} {path}` (e.g., "POST /offerings")
+    *   Database: `{operation} {table}` (e.g., "SELECT offerings")
+    *   Messaging: `PUBLISH {topic}` or `CONSUME {queue}`
+    *   Saga: `SAGA {process_name} {task_name}`
+*   Configure **ELK Stack**:
+    *   Services write JSON logs to stdout.
+    *   Filebeat ships logs to Logstash.
+    *   Logstash parses and forwards to Elasticsearch.
+    *   Kibana dashboards for log search by correlation ID.
+*   **Verification:** 
+    *   Make a request that spans multiple services (e.g., publish offering).
+    *   Open Zipkin UI → See waterfall chart spanning HTTP and async boundaries.
+    *   Open Kibana → Search by correlation ID → See all related logs.
 
 ---
 
 ## PART IV: FRONTEND (NextJS)
 
-### Phase 13: UI Scaffold & Authentication
-**Goal:** A working web app that can log in.
-*   Initialize NextJS + Tailwind.
-*   Implement the **Auth Context** (Login page, store JWT, intercept 401s).
-*   Create the Navigation Layout (Builder / Viewer / Store).
-*   **Verification:** Login redirects to Dashboard. Logout redirects to Login.
+### Phase 14: UI Scaffold & Authentication
 
-### Phase 14: The Builder & Viewer (Admin UI)
-**Goal:** Enable data entry and management.
-*   Implement "Builder" forms for all 4 entities (using multi-selects for dependencies).
-*   Implement "Viewer" grids (Read-only tables).
-*   Connect them to the API Gateway.
+**Goal:** A working web app that can log in.
+
+*   Initialize NextJS 14+ with App Router + Tailwind CSS.
+*   Implement the **Auth Context**:
+    *   Login page (`/login`) with username/password form.
+    *   Store JWT in localStorage.
+    *   AuthProvider wraps app, provides user state.
+    *   Intercept 401 responses → Redirect to login.
+    *   Token expiration handling.
+*   Create the **Navigation Layout**:
+    *   Header with logo, nav links, user indicator, logout button.
+    *   Main navigation: Builder, Viewer, Store.
+    *   Protected routes redirect to `/login` if not authenticated.
+*   Set up **API Client**:
+    *   Base URL from environment variable.
+    *   Auto-attach Authorization header.
+    *   Error handling wrapper.
+*   **Verification:** 
+    *   Login with valid credentials → Redirect to Builder.
+    *   Login with invalid credentials → Error message displayed.
+    *   Logout → Redirect to Login, token cleared.
+    *   Access protected route without token → Redirect to Login.
+
+### Phase 15: The Builder (Admin UI - Create Entities)
+
+**Goal:** Enable data entry for all entity types.
+
+*   Implement **Builder Page** with 4 tabs:
+    *   **Tab 1: Create Characteristic**
+        *   Form: Name, Value, Unit of Measure (dropdown).
+        *   Submit → POST /api/v1/characteristics.
+        *   Success toast, clear form.
+    *   **Tab 2: Create Specification**
+        *   Form: Name, Characteristics (multi-select with search).
+        *   Fetch characteristics on mount for dropdown.
+        *   Display selected as chips/tags.
+        *   Submit → POST /api/v1/specifications.
+    *   **Tab 3: Create Pricing**
+        *   Form: Name, Value (decimal), Unit, Currency (dropdown).
+        *   Submit → POST /api/v1/prices.
+    *   **Tab 4: Create Product Offering**
+        *   Form: Name, Description, Specifications (multi-select), Prices (multi-select), Sales Channels (checkboxes).
+        *   Lifecycle Status display (starts as DRAFT).
+        *   "Save Draft" button → POST /api/v1/offerings.
+        *   "Publish" button (enabled when valid) → POST /api/v1/offerings/{id}/publish.
+*   Implement **Form Validation**:
+    *   Client-side required field validation.
+    *   Server-side error display.
+*   Implement **Loading States**:
+    *   Spinners on submit buttons.
+    *   Disable buttons during async operations.
 *   **Verification:** Create a full product hierarchy using ONLY the UI.
 
-### Phase 15: The Store & Polling (Public UI)
+### Phase 16: The Viewer (Admin UI - Manage Entities)
+
+**Goal:** View, edit, and delete existing entities.
+
+*   Implement **Viewer Page** with 4 tabs:
+    *   **Tab 1: View Characteristics**
+        *   Table: Name, Value, Unit, Created Date.
+        *   Pagination (20 per page).
+        *   Search/filter by name.
+        *   Edit button → Modal with pre-filled form → PUT /api/v1/characteristics/{id}.
+        *   Delete button → Confirmation dialog → DELETE /api/v1/characteristics/{id}.
+        *   Handle "Cannot delete, used by specifications" error.
+    *   **Tab 2: View Specifications**
+        *   Table: Name, Characteristics (comma-separated), Created Date.
+        *   Click to expand characteristic details.
+        *   Edit and Delete with dependency error handling.
+    *   **Tab 3: View Prices**
+        *   Table: Name, Value, Unit, Currency, Status (Locked/Unlocked).
+        *   Lock icon with tooltip for locked prices.
+        *   Edit/Delete with lock error handling (423 Locked).
+    *   **Tab 4: View Offerings**
+        *   Table: Name, Lifecycle Status (badge), Published Date.
+        *   Filter by lifecycle status (All, Draft, Published, Retired).
+        *   Actions based on status:
+            *   DRAFT: Edit, Publish, Delete
+            *   PUBLISHED: Retire, View Details
+            *   RETIRED: View Details only
+        *   Detail modal showing full hierarchy.
+*   **Verification:** 
+    *   View all entity types.
+    *   Edit an entity → Changes reflected.
+    *   Delete with dependency → Error displayed.
+    *   Filter offerings by status.
+
+### Phase 17: The Store & Saga Polling (Public UI)
+
 **Goal:** The Customer experience and Saga feedback.
-*   Implement the Store Grid (Search & Filter).
-*   Implement **Saga Feedback**: When user clicks "Publish", show a spinner and poll the status endpoint until it flips to "PUBLISHED".
-*   **Verification:** The full "Happy Path" demo. Create -> Publish -> Watch Spinner -> See in Store.
+
+*   Implement **Store Page** (public, no auth required):
+    *   **Search Bar:** Full-text search with debounce (300ms).
+    *   **Filters Panel** (sidebar):
+        *   Price range slider (min/max).
+        *   Characteristic filters (dynamic based on available characteristics).
+        *   Sales channel checkboxes.
+        *   Clear filters button.
+    *   **Results Grid:** 
+        *   Card layout (3-4 columns desktop, 1-2 mobile).
+        *   Each card: Name, Price, Key characteristics, "View Details" button.
+    *   **Detail View:** Modal or page with full offering info.
+    *   **Pagination:** Load more or infinite scroll.
+    *   **URL State:** Filters reflected in URL query params (bookmarkable).
+*   Implement **Saga Feedback** (in Builder/Viewer):
+    *   When user clicks "Publish":
+        *   Show loading spinner.
+        *   Poll `GET /api/v1/offerings/{id}` every 2 seconds.
+        *   Max 30 attempts (1 minute timeout).
+        *   On PUBLISHED → Success toast.
+        *   On DRAFT (failed) → Error toast with failure reason.
+        *   On timeout → Warning toast.
+*   **Verification:** 
+    *   Full "Happy Path": Create → Publish → Watch Spinner → See in Store.
+    *   Search and filter in Store → Correct results.
+    *   Force saga failure → Offering reverts, error displayed.
+
+---
+
+## PART V: TESTING & DOCUMENTATION
+
+### Phase 18: Comprehensive Testing
+
+**Goal:** Ensure system reliability with proper test coverage.
+
+*   **Unit Tests** (pytest):
+    *   Domain logic for all services (80% coverage target).
+    *   Business rules, invariants, state transitions.
+    *   Mock external dependencies.
+*   **Integration Tests**:
+    *   Repository tests with real PostgreSQL (testcontainers).
+    *   Message publishing tests with real RabbitMQ.
+    *   HTTP client tests with mocked services.
+*   **Component Tests**:
+    *   Full service tests with real database, mocked external services.
+    *   Test complete request/response cycles.
+*   **E2E Tests** (optional, Playwright):
+    *   Login flow.
+    *   Create characteristic → specification → price → offering.
+    *   Publish offering.
+    *   View in store.
+*   **Verification:** 
+    *   `pytest --cov` shows 80%+ coverage on domain code.
+    *   All tests pass in CI pipeline.
+
+### Phase 19: Documentation & Report
+
+**Goal:** Complete project documentation for submission.
+
+*   **Update SDD** with final architecture diagrams.
+*   **Generate API Documentation** (FastAPI auto-docs + export to markdown).
+*   **Write Final Report**:
+    *   Problem definition (TMF catalog requirements).
+    *   User stories and scenarios.
+    *   Non-functional requirements.
+    *   Architecture diagrams (context, container, component).
+    *   Service decomposition rationale (bounded contexts).
+    *   Design patterns applied (CQRS, Saga, Outbox, Circuit Breaker).
+    *   Technology stack justification.
+    *   Database schemas.
+    *   Testing strategy and results.
+    *   Deployment instructions.
+    *   Evaluation and future improvements.
+*   **Create README** with:
+    *   Project overview.
+    *   Prerequisites.
+    *   Setup instructions (`docker-compose up`).
+    *   `.env.example` file.
+    *   Demo walkthrough steps.
+*   **Verification:** All documentation complete and accurate.
+
+### Phase 20: Demo Video Production
+
+**Goal:** Create the 5-minute demo video for submission.
+
+*   **Script & Record** (max 5 minutes):
+    1.  **Architecture Overview** (30s): Show system diagram.
+    2.  **Live Demo Walkthrough**:
+        *   Login (10s).
+        *   Create Characteristic (20s).
+        *   Create Specification with dependency (20s).
+        *   Create Pricing (20s).
+        *   Create and Publish Offering - show saga spinner (60s).
+        *   View in Store page (30s).
+        *   Search and filter demo (20s).
+    3.  **Technical Highlights**:
+        *   Open Camunda Cockpit - show process instance (30s).
+        *   Open Zipkin - show distributed trace (30s).
+        *   Open Kibana - show logs with correlation ID (20s).
+    4.  **Conclusion** (20s).
+*   **Verification:** Video is under 5 minutes, covers all key features, audio is clear.
+
+---
+
+## Summary Checklist
+
+### Code Deliverables
+- [ ] Monorepo with all 6 services + Gateway + Frontend
+- [ ] Docker Compose file (working, documented)
+- [ ] Database migrations (Alembic scripts)
+- [ ] Shared chassis library (libs/common-python)
+- [ ] Camunda BPMN files
+- [ ] Frontend application
+- [ ] README with setup instructions
+- [ ] .env.example file
+
+### Documentation
+- [ ] System Design Document (SDD)
+- [ ] API Specifications
+- [ ] Final Report
+
+### Demo
+- [ ] 5-minute video walkthrough
 
