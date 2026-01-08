@@ -97,7 +97,7 @@ graph TB
     end
     Gateway -->|/characteristics/*| CharSvc --> CharDB
     Gateway -->|/specifications/*| SpecSvc --> SpecDB
-    SpecSvc -.->|Validate IDs| CharSvc
+    SpecSvc -.->|Subscribes to Events| RabbitMQ
     
     %% ===== COMMERCIAL CONTEXT =====
     subgraph CommercialCtx["Commercial Context"]
@@ -231,7 +231,9 @@ graph TB
     Gateway -->|/api/v1/specifications/*| SpecAPI
     SpecAPI --> SpecDomain --> SpecRepo --> SpecDB
     SpecRepo --> SpecOutbox
-    SpecValidator -->|HTTP Validate| CharAPI
+    SpecValidator -->|Read Local Cache| SpecDB
+    SpecSvcSubscriber[Event Subscriber] -.->|Characteristic Events| SpecDB
+    RabbitMQ -.-> SpecSvcSubscriber
     
     %% ===== COMMERCIAL CONTEXT =====
     subgraph CommercialContext["Commercial Context (Bounded Context)"]

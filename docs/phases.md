@@ -32,6 +32,9 @@ Here is your **Incremental Roadmap**.
     *   `NotFoundError` → 404 Not Found
     *   `ConflictError` → 409 Conflict
     *   `ServiceUnavailableError` → 503 Service Unavailable
+*   **Idempotency & Versioning Utilities:**
+    *   Implement idempotency decorator for route handlers.
+    *   Implement version comparison logic for optimistic concurrency.
 *   Implement standard **Error Response Format** with correlation ID.
 *   **Verification:** Write unit tests in the library that log a JSON message and handle custom exceptions correctly.
 
@@ -116,24 +119,27 @@ Here is your **Incremental Roadmap**.
 
 ### Phase 7: Dependency Management (Specification Service)
 
-**Goal:** Handle cross-service synchronous dependencies.
+**Goal:** Handle cross-service dependencies with Eventual Consistency.
 
 *   Implement `Specification Service` (Write side) following same Clean Architecture.
-*   Implement the **Synchronous Validator** (HTTP Client with timeout):
-    *   Calls Characteristic Service to validate each characteristic ID exists.
-    *   Timeout: 5 seconds connection, 10 seconds read.
-    *   Returns 400 with list of invalid IDs if any don't exist.
-    *   Returns 503 if Characteristic Service unreachable.
+*   **Implement Local Reference Cache:**
+    *   Create `cached_characteristics` table (id, valid_until).
+    *   Subscribe to `resource.characteristics.events` (RabbitMQ consumer).
+    *   On `CharacteristicCreated` / `Updated`: Upsert into cache.
+    *   On `CharacteristicDeleted`: Remove from cache.
+*   **Update Validation Logic:**
+    *   Validate Characteristic IDs against local `cached_characteristics` table.
+    *   If ID missing, return 400 (or optional: implement lazy-load fallback with Circuit Breaker).
 *   Implement Domain Logic:
     *   "A spec must have at least 1 characteristic."
     *   "Name must be unique."
     *   "Cannot delete if referenced by Offerings."
 *   Apply **Outbox Pattern** for events:
     *   `SpecificationCreated`, `SpecificationUpdated`, `SpecificationDeleted`
-*   **Verification:** 
-    *   Create Spec with fake Char ID → 400 Bad Request (include invalid IDs).
-    *   Create Spec with real Char IDs → 201 Created.
-    *   Stop Characteristic container, create Spec → 503 Service Unavailable.
+*   **Verification:**
+    *   Create Characteristic → Verify it appears in Spec Service cache (via direct DB check).
+    *   Create Spec with cached Char ID → 201 Created.
+    *   Create Spec with unknown Char ID → 400 Bad Request.
 
 ### Phase 8: Commercial Domain (Pricing Service)
 

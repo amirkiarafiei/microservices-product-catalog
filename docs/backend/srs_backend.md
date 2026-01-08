@@ -201,9 +201,10 @@ The backend system consists of six microservices orchestrated through an API Gat
 - Deletion: Check Product Offering Service for references
 
 **Cross-Service Validation:**
-- **Synchronous Validation:** When creating/updating Specification, make HTTP GET requests to Characteristic Service to validate each characteristic ID exists
-- **Timeout Handling:** If Characteristic Service unreachable, reject request with 503 Service Unavailable
-- **Circuit Breaker:** Apply circuit breaker pattern to Characteristic Service calls
+- **Local Reference Cache:** To ensure autonomy, the Specification Service maintains a local read-only table of valid Characteristic IDs.
+- **Event-Driven Synchronization:** The Specification Service subscribes to `resource.characteristics.events` (Created/Deleted) to keep its local cache up to date.
+- **Validation:** When creating/updating a Specification, the service validates characteristic existence against its local cache instead of making synchronous HTTP calls.
+- **Fallback:** If a referenced characteristic is not yet in the local cache due to eventual consistency lag, the service may return a `400 Bad Request` suggesting a retry or perform a one-time "lazy-load" fetch from the Characteristic Service.
 
 **Event Handling:**
 - **Subscribe to:** CharacteristicUpdated events
@@ -725,10 +726,10 @@ FOR EACH ROW EXECUTE FUNCTION notify_outbox();
 4. Update status to SENT
 5. Handle errors (log, retry later)
 
-#### 4.1.5 Exception Classes
-- Standard exception hierarchy (ValidationError, NotFoundError, ConflictError, ServiceUnavailableError)
-- HTTP status code mapping
-- Consistent error response format
+#### 4.1.6 Idempotency & Utility Module
+- **Idempotency Decorator:** A reusable decorator for FastAPI routes and event handlers to track processed IDs.
+- **Storage Adapter:** Interface for storing/checking idempotency keys (supporting Redis or SQL).
+- **Version Comparison:** Utility to handle version-based update logic.
 
 **Error Response Format:**
 ```json
@@ -844,11 +845,14 @@ If time permits, expose Prometheus metrics:
 }
 ```
 
-#### 4.3.3 Idempotency
-- All event handlers must be idempotent
-- Store processed event IDs in database
-- Skip processing if event already handled
-- API endpoints that trigger side effects should accept idempotency key (optional)
+#### 4.3.3 Idempotency & Versioning
+- **Event Versioning:** Every domain event must include a `version` (monotonically increasing) or a `sequence_number`.
+- **Version-Based Concurrency:** The Store Query Service must implement **Version-based Optimistic Concurrency**. It shall compare the version of the incoming event with the version currently stored in the read-model.
+- **Rules:**
+  - If `incoming_version > stored_version`: Process event and update document.
+  - If `incoming_version <= stored_version`: Ignore the event (stale/duplicate).
+- **Idempotency Key:** Use `event_id` as a primary idempotency key.
+- **Tracking:** Store processed event IDs and their associated entity versions in a tracking collection to prevent re-processing.
 
 #### 4.3.4 Referential Integrity
 
@@ -1343,6 +1347,12 @@ CREATE TABLE specifications (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Local Cache for Characteristics (Validation Autonomy)
+CREATE TABLE cached_characteristics (
+    id UUID PRIMARY KEY,
+    last_updated_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Outbox table same as above
 ```
 
@@ -1406,6 +1416,7 @@ CREATE TABLE users (
   "event_id": "uuid",
   "event_type": "CharacteristicCreated",
   "schema_version": "1.0",
+  "entity_version": 1,
   "timestamp": "2026-01-15T10:30:00Z",
   "correlation_id": "uuid",
   "payload": {
@@ -1421,6 +1432,10 @@ CREATE TABLE users (
 ```json
 {
   "event_type": "SpecificationCreated",
+  "event_id": "uuid",
+  "schema_version": "1.0",
+  "entity_version": 1,
+  "timestamp": "...",
   "payload": {
     "id": "uuid",
     "name": "High-Speed Internet Package",
@@ -1433,6 +1448,10 @@ CREATE TABLE users (
 ```json
 {
   "event_type": "OfferingPublished",
+  "event_id": "uuid",
+  "schema_version": "1.0",
+  "entity_version": 1,
+  "timestamp": "...",
   "payload": {
     "id": "uuid",
     "name": "Premium Package",
