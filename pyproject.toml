@@ -6,8 +6,29 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []
 
+[dependency-groups]
+dev = [
+    "ruff>=0.1.0",
+]
+
 [tool.uv.workspace]
 members = ["services/*", "libs/*"]
 
 [tool.uv]
 managed = true
+
+[tool.ruff]
+# Relaxed rules for student project
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# Select basic rules: Pyflakes (F), pycodestyle (E, W), isort (I)
+select = ["F", "E", "W", "I"]
+ignore = [
+    "E501", # Ignore line length violations (already set 100, but be extra relaxed)
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
