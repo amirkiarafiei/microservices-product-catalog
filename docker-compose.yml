@@ -1,0 +1,102 @@
+services:
+  # --- Write Side (PostgreSQL) ---
+  postgres:
+    image: postgres:15-alpine
+    container_name: catalog-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --- Message Broker ---
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: catalog-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- Read Side (CQRS) ---
+  mongodb:
+    image: mongo:7
+    container_name: catalog-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+    container_name: catalog-elasticsearch
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # --- Saga Orchestration ---
+  camunda:
+    image: camunda/camunda-bpm-platform:run-7.20.0
+    container_name: catalog-camunda
+    ports:
+      - "8085:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/engine-rest/version || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- Observability ---
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: catalog-zipkin
+    ports:
+      - "9411:9411"
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.1
+    container_name: catalog-logstash
+    volumes:
+      - ./infra/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.1
+    container_name: catalog-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  es_data:

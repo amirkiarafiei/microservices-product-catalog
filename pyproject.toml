@@ -1,0 +1,13 @@
+[project]
+name = "microservices-product-catalog"
+version = "0.1.0"
+description = "TMF Product Catalog Microservices System"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv.workspace]
+members = ["services/*", "libs/*"]
+
+[tool.uv]
+managed = true

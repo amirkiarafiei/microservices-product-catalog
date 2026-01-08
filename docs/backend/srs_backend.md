@@ -1893,7 +1893,7 @@ The backend system is considered complete when:
 - Kibana: 5601
 - RabbitMQ: 5672 (AMQP), 15672 (Management UI)
 - Zipkin: 9411
-- Camunda: 8080 (Cockpit UI)
+- Camunda: 8085 (Cockpit UI)
 
 ### Appendix D: Environment Variables Template
 
