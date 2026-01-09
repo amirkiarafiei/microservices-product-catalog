@@ -6,6 +6,7 @@ from common.exceptions import NotFoundError, ValidationError
 from common.logging import setup_logging
 from common.utils.idempotency import idempotency_key_required
 from common.utils.versioning import check_version
+from common.security import UserContext
 
 
 def test_logging_output(capsys):
@@ -72,3 +73,9 @@ async def test_idempotency_skeleton():
 
     result = await my_handler(10)
     assert result == 20
+
+
+def test_user_context():
+    user = UserContext(user_id="123", username="test", role="ADMIN")
+    assert user.user_id == "123"
+    assert user.role == "ADMIN"

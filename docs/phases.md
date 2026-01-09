@@ -75,6 +75,13 @@ Here is your **Incremental Roadmap**.
     *   Protected endpoint returns 200 with valid token.
     *   Admin-only endpoint returns 403 for USER role.
 
+**Status Update (Jan 8, 2026):**
+*   **Identity Service Implemented:** FastAPI service with SQLAlchemy/PostgreSQL storage.
+*   **Zero Trust Security:** RS256 JWT signing with asymmetric keys implemented.
+*   **Database:** User model and Alembic migrations established; demo users seeded.
+*   **Shared Security:** `common-python` updated with `get_current_user` and `RoleChecker` dependencies.
+*   **Verified:** Login flow and token generation tested and working.
+
 ### Phase 4: Database Migrations Setup
 
 **Goal:** Establish database schema management with Alembic.

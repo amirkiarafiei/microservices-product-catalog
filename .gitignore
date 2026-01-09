@@ -168,6 +168,13 @@ cython_debug/
 # OS X
 .DS_Store
 
+# RSA Keys & Secrets
+*.pem
+*.key
+*private*
+*secret*
+*_base64.txt
+
 # Docker
 .docker/
 docker-compose.override.yml
