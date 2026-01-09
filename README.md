@@ -24,7 +24,25 @@ Run the generation script:
 ```
 The script will generate `private_key.pem` and `public_key.pem` in the `identity-service` folder and provide you with the formatted strings to copy into your `services/identity-service/.env` file.
 
-### 4. Running the Identity Service
+### 4. Database Migrations
+We use a centralized migration tool to manage schemas across all microservices.
+
+**Apply all migrations:**
+```bash
+python scripts/migrate.py upgrade head
+```
+
+**View migration history for a specific service:**
+```bash
+python scripts/migrate.py --service identity-service history
+```
+
+**Create a new migration (Autogenerate):**
+```bash
+python scripts/migrate.py --service <service-name> revision --autogenerate -m "description"
+```
+
+### 5. Running the Identity Service
 ```bash
 cd services/identity-service
 uv run uvicorn src.main:app --reload --port 8001
