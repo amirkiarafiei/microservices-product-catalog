@@ -115,7 +115,7 @@ Here is your **Incremental Roadmap**.
 *   Implement validation rules:
     *   Name: Required, 1-200 characters, alphanumeric with spaces
     *   Value: Required, 1-100 characters
-    *   UnitOfMeasure: Required, enum [Mbps, GB, GHz, Volt, Watt, Meter, None]
+    *   UnitOfMeasure: Required, enum [Mbps, GB, GHz, Volt, Watt, Meter, None, and many many more enums]
 *   Implement Health Check endpoint: `GET /health`.
 *   **Crucial:** Do **NOT** implement Outbox or RabbitMQ yet. Just pure CRUD.
 *   **Verification:** 
