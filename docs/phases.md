@@ -20,7 +20,7 @@ Here is your **Incremental Roadmap**.
 *   Create a simple health check service to verify infrastructure connectivity.
 *   **Verification:** `docker-compose up` runs without exiting. All services healthy. RabbitMQ Management UI accessible at :15672.
 
-**Status Update (Jan 8, 2026):**
+**Status Update (Jan 10, 2026):**
 *   **Monorepo Initialized:** `uv` workspace configured with `services/` and `libs/` directories.
 *   **Infrastructure Ready:** `docker-compose.yml` orchestrates 8 services (Postgres, RabbitMQ, Mongo, ES, Camunda, Zipkin, Logstash, Kibana).
 *   **DB Setup:** Single Postgres container configured with `init-db.sql` to provision 5 microservice databases.
@@ -45,7 +45,7 @@ Here is your **Incremental Roadmap**.
 *   Implement standard **Error Response Format** with correlation ID.
 *   **Verification:** Write unit tests in the library that log a JSON message and handle custom exceptions correctly.
 
-**Status Update (Jan 8, 2026):**
+**Status Update (Jan 10, 2026):**
 *   **Library Initialized:** `libs/common-python` created as a `uv` package.
 *   **Logging:** Structured JSON logging implemented with `service_name`, `correlation_id`, and `trace_id` support.
 *   **Configuration:** `BaseServiceSettings` using Pydantic Settings implemented for environment-based config.
@@ -75,11 +75,12 @@ Here is your **Incremental Roadmap**.
     *   Protected endpoint returns 200 with valid token.
     *   Admin-only endpoint returns 403 for USER role.
 
-**Status Update (Jan 8, 2026):**
+**Status Update (Jan 10, 2026):**
 *   **Identity Service Implemented:** FastAPI service with SQLAlchemy/PostgreSQL storage.
 *   **Zero Trust Security:** RS256 JWT signing with asymmetric keys implemented.
-*   **Database:** User model and Alembic migrations established; demo users seeded.
+*   **Database:** User model established; demo users seeded.
 *   **Shared Security:** `common-python` updated with `get_current_user` and `RoleChecker` dependencies.
+*   **Management:** `scripts/generate_keys.sh` created for local RSA key generation; keys excluded from Git.
 *   **Verified:** Login flow and token generation tested and working.
 
 ### Phase 4: Database Migrations Setup
@@ -90,6 +91,12 @@ Here is your **Incremental Roadmap**.
 *   Create initial migration scripts for Identity Service.
 *   Establish migration patterns for the monorepo (per-service migrations).
 *   **Verification:** `alembic upgrade head` creates tables. `alembic downgrade -1` rolls back.
+
+**Status Update (Jan 10, 2026):**
+*   **Migration Pattern Established:** Alembic configured for `identity-service` with a `src/` import-aware `env.py`.
+*   **Initial Migration:** First migration created and applied for the User table.
+*   **Monorepo Strategy:** Per-service migration folders established as the standard for future services.
+*   **Verified:** Migration `upgrade` and `downgrade` tested successfully.
 
 ---
 
