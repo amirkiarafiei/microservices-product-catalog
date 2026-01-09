@@ -125,7 +125,7 @@ The backend system consists of six microservices orchestrated through an API Gat
   - Attributes: id (UUID), name (string), value (string), unitOfMeasure (enum), createdAt, updatedAt
   - Business Rules:
     - Name must be unique within the catalog
-    - UnitOfMeasure must be from predefined enum: [Mbps, GB, GHz, Volt, Watt, Meter, None]
+    - UnitOfMeasure must be from predefined enum: [Mbps, Gbps, MB, GB, TB, GHz, Volt, Watt, Meter, Percent, Seconds, Minutes, Hours, Days, Months, Years, Unit, None]
     - Value must be compatible with unit type (numeric for measurable units)
   - Invariants:
     - Cannot be deleted if referenced by any Specification
@@ -1551,7 +1551,7 @@ GET /api/v1/store/offerings?query=high-speed&min_price=10&max_price=100&characte
 
 ### 9.1 Characteristic Business Rules
 1. Name must be unique across all characteristics
-2. Unit of measure must be from enum (Mbps, GB, GHz, Volt, Watt, Meter, None)
+2. Unit of measure must be from enum (Mbps, Gbps, MB, GB, TB, GHz, Volt, Watt, Meter, Percent, Seconds, Minutes, Hours, Days, Months, Years, Unit, None)
 3. Cannot be deleted if referenced by any specification
 4. Updates must propagate to dependent specifications via events
 

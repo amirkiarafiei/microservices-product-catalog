@@ -42,10 +42,17 @@ python scripts/migrate.py --service identity-service history
 python scripts/migrate.py --service <service-name> revision --autogenerate -m "description"
 ```
 
-### 5. Running the Identity Service
+### 5. Running the Services
+**Identity Service:**
 ```bash
 cd services/identity-service
 uv run uvicorn src.main:app --reload --port 8001
+```
+
+**Characteristic Service:**
+```bash
+cd services/characteristic-service
+uv run uvicorn src.main:app --reload --port 8002
 ```
 
 ## 🏗 Architecture
