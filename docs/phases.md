@@ -93,10 +93,10 @@ Here is your **Incremental Roadmap**.
 *   **Verification:** `alembic upgrade head` creates tables. `alembic downgrade -1` rolls back.
 
 **Status Update (Jan 10, 2026):**
-*   **Migration Pattern Established:** Alembic configured for `identity-service` with a `src/` import-aware `env.py`.
-*   **Initial Migration:** First migration created and applied for the User table.
-*   **Monorepo Strategy:** Per-service migration folders established as the standard for future services.
-*   **Verified:** Migration `upgrade` and `downgrade` tested successfully.
+*   **Centralized Migration Engine:** Shared migration logic moved to `libs/common-python` to ensure consistency across services.
+*   **Monorepo Tooling:** Implemented `scripts/migrate.py` to manage migrations for all services from the project root.
+*   **Refactored Identity:** Updated `identity-service` to use the shared engine, keeping its `env.py` clean and maintainable.
+*   **Verified:** Global workflow tested successfully with `upgrade`, `downgrade`, and `history` commands.
 
 ---
 

@@ -397,7 +397,7 @@ The system is composed of 6 autonomous services:
 
 | Service | Type | Responsibility & Pattern |
 | :--- | :--- | :--- |
-| **Identity Service** | Utility | **Authentication.** Issues and validates JWTs (RS256). Implements Zero Trust security. |
+| **Identity Service** | Utility | **Authentication.** Issues and validates JWTs (RS256). Implements Zero Trust security with locally generated RSA key pairs. |
 | **Characteristic Service** | Write | **Resource Context.** Manages atomic attributes (e.g., "Internet Speed", "Color"). Uses Outbox Pattern. |
 | **Specification Service** | Write | **Resource Context.** Groups characteristics into technical specs. Validates dependencies synchronously. |
 | **Pricing Service** | Write | **Commercial Context.** Manages monetary definitions. Supports "Locking" during active Sagas. |
@@ -424,6 +424,7 @@ The system is composed of 6 autonomous services:
 ### 5. Technical & Non-Functional Requirements
 
 1.  **Data Consistency:**
+    *   **Database Migrations:** Managed per-service via **Alembic**. A centralized migration engine in the shared chassis ensures schema consistency, while a root-level migration tool allows system-wide updates.
     *   **Transactional Outbox:** No dual-write issues. Database updates and Event publishing happen atomically using Postgres `LISTEN/NOTIFY`.
     *   **Saga Pattern:** Orchestration via **Camunda**. If an offering fails validation during publishing, all changes (e.g., Price locks) are rolled back.
 
