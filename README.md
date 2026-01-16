@@ -15,6 +15,106 @@ A cloud-native, event-driven microservices platform for managing telecommunicati
 
 ---
 
+## 📊 System Visualizations
+
+### 1. High-Level Architecture
+The system is divided into a **Command Side** (Write) and a **Query Side** (Read), connected via asynchronous events.
+
+```mermaid
+flowchart TB
+    subgraph ClientLayer [Frontend]
+        UI[NextJS App]
+    end
+
+    subgraph EntryLayer [API Gateway]
+        GW[API Gateway]
+    end
+
+    subgraph WriteSide [Command Side - PostgreSQL]
+        ID[Identity]
+        CH[Characteristic]
+        SP[Specification]
+        PR[Pricing]
+        OF[Offering]
+    end
+
+    subgraph Orchestration [Orchestration]
+        CAM[Camunda Engine]
+    end
+
+    subgraph Messaging [Event Bus]
+        RMQ[RabbitMQ]
+    end
+
+    subgraph ReadSide [Query Side - NoSQL]
+        ST[Store Query Service]
+        MDB[(MongoDB)]
+        ES[(Elasticsearch)]
+    end
+
+    UI --> GW
+    GW --> WriteSide
+    OF -->|"Start Saga"| CAM
+    CAM -->|"Tasks"| WriteSide
+    WriteSide -->|"Outbox Events"| RMQ
+    RMQ --> ST
+    ST --> MDB
+    ST --> ES
+    GW --> ST
+```
+
+### 2. Offering Publication Saga
+A distributed transaction spanning four microservices, orchestrated by Camunda.
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant OF as Offering Service
+    participant CAM as Camunda Engine
+    participant PR as Pricing Service
+    participant SP as Spec Service
+    participant ST as Store Service
+
+    Admin->>OF: POST /publish
+    OF->>CAM: Start Process
+    CAM->>PR: Task: Lock Prices
+    PR-->>CAM: Done
+    CAM->>SP: Task: Validate Specs
+    SP-->>CAM: Done
+    CAM->>ST: Task: Pre-create View
+    ST-->>CAM: Done
+    CAM->>OF: Task: Mark Published
+    OF-->>Admin: 200 OK (via Outbox/Event)
+```
+
+### 3. Transactional Outbox Pattern
+Ensures that a database update and its corresponding event publication happen atomically.
+
+```mermaid
+flowchart LR
+    subgraph Service [Microservice]
+        Logic[Business Logic]
+        Repo[Repository]
+    end
+
+    subgraph DB [PostgreSQL]
+        Data[(Business Data)]
+        Outbox[(Outbox Table)]
+    end
+
+    subgraph Broker [RabbitMQ]
+        Queue[Event Exchange]
+    end
+
+    Logic --> Repo
+    Repo -->|"Atomic Transaction"| Data
+    Repo -->|"Atomic Transaction"| Outbox
+    Outbox -->|"pg_notify"| Listener[Outbox Listener]
+    Listener -->|"Publish"| Queue
+```
+
+---
+
 ## 📂 Microservices Map
 
 | Service | Responsibility | Write DB | Read/Search |
