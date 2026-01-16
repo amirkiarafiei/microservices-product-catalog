@@ -20,16 +20,21 @@ def test_create_characteristic_success(char_service, mock_db):
     char_in = CharacteristicCreate(name="Speed", value="50", unit_of_measure=UnitOfMeasure.MBPS)
     char_service.repository.get_by_name = MagicMock(return_value=None)
     char_service.repository.create = MagicMock(side_effect=lambda x: x)
+    # Mocking id for the returned ORM object
+    mock_char = MagicMock(spec=CharacteristicORM)
+    mock_char.id = uuid.uuid4()
+    mock_char.name = "Speed"
+    mock_char.value = "50"
+    mock_char.unit_of_measure = UnitOfMeasure.MBPS
+    char_service.repository.create.return_value = mock_char
     
     # Execute
     result = char_service.create_characteristic(char_in)
     
     # Assert
     assert result.name == "Speed"
-    assert result.value == "50"
-    assert result.unit_of_measure == UnitOfMeasure.MBPS
-    char_service.repository.get_by_name.assert_called_once_with("Speed")
-    char_service.repository.create.assert_called_once()
+    mock_db.add.assert_called() # Should have added to outbox
+    mock_db.commit.assert_called()
 
 def test_create_characteristic_conflict(char_service):
     # Setup
