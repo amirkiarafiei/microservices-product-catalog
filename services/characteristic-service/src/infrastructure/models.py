@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 from .database import Base
 from ..domain.models import UnitOfMeasure
+from common.database.outbox import OutboxMixin
 
 
 class CharacteristicORM(Base):
@@ -38,3 +39,7 @@ class CharacteristicORM(Base):
             created_at=char.created_at,
             updated_at=char.updated_at
         )
+
+
+class OutboxORM(Base, OutboxMixin):
+    __tablename__ = "outbox"

@@ -12,14 +12,61 @@ from .config import settings
 from .infrastructure.database import get_db
 from .application.schemas import CharacteristicCreate, CharacteristicUpdate, CharacteristicRead
 from .application.service import CharacteristicService
+from .infrastructure.models import OutboxORM
+from .infrastructure.database import SessionLocal
+from common.database.outbox import OutboxListener
+from common.messaging import RabbitMQPublisher
+import asyncio
 
 # Setup logging
 logger = setup_logging(settings.SERVICE_NAME, settings.LOG_LEVEL)
 
+from contextlib import asynccontextmanager
+
+# Global background task
+outbox_task = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global outbox_task
+    logger.info("Starting up characteristic-service")
+    
+    # Initialize RabbitMQ Publisher
+    publisher = RabbitMQPublisher(settings.RABBITMQ_URL)
+    
+    # Initialize Outbox Listener
+    # DSN for asyncpg (needs to be postgres:// instead of postgresql://)
+    dsn = settings.DATABASE_URL.replace("postgresql://", "postgres://") if settings.DATABASE_URL else None
+    
+    if dsn:
+        listener = OutboxListener(
+            dsn=dsn,
+            publisher=publisher,
+            outbox_model=OutboxORM,
+            session_factory=SessionLocal
+        )
+        
+        # Start as background task
+        outbox_task = asyncio.create_task(listener.run())
+        logger.info("Outbox listener background task started")
+    else:
+        logger.warning("DATABASE_URL not set, outbox listener not started")
+
+    yield
+    
+    if outbox_task:
+        outbox_task.cancel()
+        try:
+            await outbox_task
+        except asyncio.CancelledError:
+            pass
+    logger.info("Shutdown complete")
+
 app = FastAPI(
     title="Characteristic Service",
     description="Service for managing product characteristics",
-    version="0.1.0"
+    version="0.1.0",
+    lifespan=lifespan
 )
 
 # Exception handler for standardized error responses

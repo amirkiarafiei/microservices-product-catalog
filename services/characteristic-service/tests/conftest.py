@@ -8,11 +8,30 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 
 from src.infrastructure.database import Base, get_db
+import src.infrastructure.database as db_module
+import src.main as main_module
 from src.main import app, admin_required, any_user_required
+from src.config import settings
 from common.security import UserContext
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 # Test database URL
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "postgresql://user:password@localhost:5432/characteristic_test_db")
+TEST_RABBITMQ_URL = os.getenv("TEST_RABBITMQ_URL", "amqp://guest:guest@localhost:5672")
+
+# Override settings and database module variables for tests
+settings.DATABASE_URL = TEST_DATABASE_URL
+settings.RABBITMQ_URL = TEST_RABBITMQ_URL
+
+# Re-initialize engine and SessionLocal in the database module to use TEST_DATABASE_URL
+engine = create_engine(TEST_DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+db_module.engine = engine
+db_module.SessionLocal = SessionLocal
+# Also override in main.py because it was already imported
+main_module.SessionLocal = SessionLocal
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db():

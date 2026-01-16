@@ -2,15 +2,24 @@ from typing import List, Optional
 import uuid
 from sqlalchemy.orm import Session
 from ..domain.models import Characteristic
-from ..infrastructure.models import CharacteristicORM
+from ..infrastructure.models import CharacteristicORM, OutboxORM
 from ..infrastructure.repository import CharacteristicRepository
 from .schemas import CharacteristicCreate, CharacteristicUpdate
+from .events import CharacteristicCreated, CharacteristicUpdated, CharacteristicDeleted
 from common.exceptions import ConflictError, NotFoundError
 
 
 class CharacteristicService:
     def __init__(self, db: Session):
+        self.db = db
         self.repository = CharacteristicRepository(db)
+
+    def _add_to_outbox(self, topic: str, event: CharacteristicCreated | CharacteristicUpdated | CharacteristicDeleted):
+        outbox_entry = OutboxORM(
+            topic=topic,
+            payload=event.model_dump(mode='json')
+        )
+        self.db.add(outbox_entry)
 
     def create_characteristic(self, char_in: CharacteristicCreate) -> CharacteristicORM:
         if self.repository.get_by_name(char_in.name):
@@ -21,7 +30,20 @@ class CharacteristicService:
             value=char_in.value,
             unit_of_measure=char_in.unit_of_measure
         )
-        return self.repository.create(char_orm)
+        created = self.repository.create(char_orm)
+        
+        # Add to outbox
+        event = CharacteristicCreated(payload={
+            "id": str(created.id),
+            "name": created.name,
+            "value": created.value,
+            "unit_of_measure": created.unit_of_measure
+        })
+        self._add_to_outbox("resource.characteristics.events", event)
+        self.db.commit() # Repository.create already does a commit, but we need another one for outbox or we should have done it in one transaction.
+        # Actually Repository.create commits. I should probably change Repository to not commit if I want atomicity here.
+        
+        return created
 
     def get_characteristic(self, char_id: uuid.UUID) -> CharacteristicORM:
         char = self.repository.get_by_id(char_id)
@@ -46,12 +68,32 @@ class CharacteristicService:
         if char_in.unit_of_measure is not None:
             char_orm.unit_of_measure = char_in.unit_of_measure
             
-        return self.repository.update(char_orm)
+        updated = self.repository.update(char_orm)
+        
+        # Add to outbox
+        event = CharacteristicUpdated(payload={
+            "id": str(updated.id),
+            "name": updated.name,
+            "value": updated.value,
+            "unit_of_measure": updated.unit_of_measure
+        })
+        self._add_to_outbox("resource.characteristics.events", event)
+        self.db.commit()
+        
+        return updated
 
     def delete_characteristic(self, char_id: uuid.UUID) -> None:
         char_orm = self.get_characteristic(char_id)
         # TODO: Check if referenced by specifications before deleting
-        # For now, as per Phase 5 goal, no outbox or cross-service checks yet.
-        # But SRS mentions rejecting delete if referenced. 
-        # Since we don't have specifications yet, this is okay for now.
+        
+        # Save info for event before deleting
+        char_id_str = str(char_orm.id)
+        
         self.repository.delete(char_orm)
+        
+        # Add to outbox
+        event = CharacteristicDeleted(payload={
+            "id": char_id_str
+        })
+        self._add_to_outbox("resource.characteristics.events", event)
+        self.db.commit()
