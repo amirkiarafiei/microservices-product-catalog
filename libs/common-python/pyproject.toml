@@ -15,6 +15,7 @@ dependencies = [
     "aio-pika>=9.3.1",
     "asyncpg>=0.29.0",
     "camunda-external-task-client-python3>=0.1.0",
+    "httpx>=0.25.0",
     # OpenTelemetry Core
     "opentelemetry-api>=1.21.0",
     "opentelemetry-sdk>=1.21.0",

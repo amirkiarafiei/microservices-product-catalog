@@ -4,9 +4,11 @@ import sys
 # Add src to path so we can import it, and ensure we get the right 'src'
 # by inserting at the very beginning and using absolute path
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
+COMMON_DIR = os.path.abspath(os.path.join(BASE_DIR, "../../libs/common-python/src"))
 # Clean up any existing 'src' from sys.path to avoid ambiguity
 sys.path = [p for p in sys.path if not p.endswith("/src")]
 sys.path.insert(0, BASE_DIR)
+sys.path.insert(0, COMMON_DIR)
 
 import pricing.infrastructure.database as db_module  # noqa: E402
 import pricing.main as main_module  # noqa: E402
