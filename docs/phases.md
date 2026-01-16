@@ -378,7 +378,7 @@ Here is your **Incremental Roadmap**.
     *   **Workers Implemented (Code):** Worker handlers added per service (not auto-started inside API process to keep services testable and avoid blocking threads).
     *   **Verified:** Saga-focused integration/component tests added and passing; full Offering Service tests passing.
 
-### Phase 13: Observability & Tracing
+### Phase 13: Observability & Tracing ✅ Implemented
 
 **Goal:** Prove you know what is happening inside.
 
@@ -400,6 +400,15 @@ Here is your **Incremental Roadmap**.
     *   Make a request that spans multiple services (e.g., publish offering).
     *   Open Zipkin UI → See waterfall chart spanning HTTP and async boundaries.
     *   Open Kibana → Search by correlation ID → See all related logs.
+
+*   **Status Update (Jan 16, 2026):**
+    *   **Tracing Module:** `libs/common-python/src/common/tracing.py` created with OpenTelemetry setup, B3 propagation, and auto-instrumentation helpers.
+    *   **Logging Enhanced:** `logging.py` updated to auto-inject `trace_id` and `span_id` from OTel context into JSON logs.
+    *   **Messaging Traced:** `messaging.py` updated to propagate B3 headers in RabbitMQ message headers (PRODUCER/CONSUMER spans).
+    *   **All Services Instrumented:** API Gateway and all 6 microservices now initialize tracing and instrument FastAPI.
+    *   **ELK Configured:** `logstash.conf` updated to parse trace fields; Elasticsearch template added for optimal field mappings.
+    *   **Docker-Compose Updated:** Logstash port 5044 exposed; healthcheck added.
+    *   **Tests Added:** Unit tests for tracing utilities; integration tests for B3 header propagation.
 
 ---
 

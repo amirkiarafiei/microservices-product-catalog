@@ -81,10 +81,18 @@ services:
   logstash:
     image: docker.elastic.co/logstash/logstash:8.11.1
     container_name: catalog-logstash
+    ports:
+      - "5044:5044"
     volumes:
       - ./infra/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - ./infra/logstash/es-template.json:/usr/share/logstash/pipeline/es-template.json:ro
     depends_on:
       - elasticsearch
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9600 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.11.1

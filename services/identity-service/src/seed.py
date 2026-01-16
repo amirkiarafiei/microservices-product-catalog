@@ -1,8 +1,11 @@
+import uuid
+
 from sqlalchemy.orm import Session
+
 from .database import SessionLocal
 from .models import User
 from .security import get_password_hash
-import uuid
+
 
 def seed_users():
     db: Session = SessionLocal()
@@ -18,7 +21,7 @@ def seed_users():
                 role="ADMIN"
             )
             db.add(admin)
-        
+
         user = db.query(User).filter(User.username == "user").first()
         if not user:
             print("Seeding regular user...")
@@ -29,7 +32,7 @@ def seed_users():
                 role="USER"
             )
             db.add(user)
-        
+
         db.commit()
         print("Seeding completed successfully.")
     except Exception as e:

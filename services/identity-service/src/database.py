@@ -1,7 +1,8 @@
+import os
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import os
 
 # This will be overridden by settings later, but for migrations we need it
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/identity_db")

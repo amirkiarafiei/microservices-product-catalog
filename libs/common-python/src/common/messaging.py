@@ -1,17 +1,65 @@
+"""
+RabbitMQ Messaging with OpenTelemetry Trace Context Propagation.
+
+Provides async publisher and consumer with automatic B3 trace header injection/extraction.
+"""
+
 import asyncio
 import json
 import logging
+from typing import Any, Callable, Dict, Optional
 
 import aio_pika
+from opentelemetry import context, trace
+from opentelemetry.propagate import extract, inject
+from opentelemetry.trace import SpanKind
 
 from .schemas import Event
 
 logger = logging.getLogger(__name__)
 
+
+class DictCarrier(dict):
+    """
+    Carrier for OpenTelemetry context propagation via message headers.
+    """
+
+    pass
+
+
+def inject_trace_context(headers: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Inject current trace context into message headers.
+
+    Args:
+        headers: Existing headers dict to inject into.
+
+    Returns:
+        Headers with B3 trace context added.
+    """
+    carrier = DictCarrier(headers)
+    inject(carrier)
+    return dict(carrier)
+
+
+def extract_trace_context(headers: Dict[str, Any]) -> context.Context:
+    """
+    Extract trace context from message headers.
+
+    Args:
+        headers: Message headers containing B3 trace context.
+
+    Returns:
+        OpenTelemetry context for span continuation.
+    """
+    return extract(headers or {})
+
+
 class RabbitMQPublisher:
     """
-    Asynchronous RabbitMQ publisher with retry logic.
+    Asynchronous RabbitMQ publisher with retry logic and trace propagation.
     """
+
     def __init__(self, amqp_url: str):
         self.amqp_url = amqp_url
         self.connection = None
@@ -27,34 +75,65 @@ class RabbitMQPublisher:
     async def publish(self, topic: str, event: Event, retries: int = 3):
         """
         Publishes an event to a specific topic exchange.
+
+        Automatically injects B3 trace context into message headers.
+
+        Args:
+            topic: Routing key / topic for the event.
+            event: Event object to publish.
+            retries: Number of retry attempts on failure.
         """
-        await self.connect()
+        tracer = trace.get_tracer(__name__)
 
-        # Ensure exchange exists
-        exchange = await self.channel.declare_exchange(
-            "catalog.events", aio_pika.ExchangeType.TOPIC, durable=True
-        )
+        # Create a PRODUCER span for the publish operation
+        with tracer.start_as_current_span(
+            f"PUBLISH {topic}",
+            kind=SpanKind.PRODUCER,
+            attributes={
+                "messaging.system": "rabbitmq",
+                "messaging.destination": topic,
+                "messaging.destination_kind": "topic",
+                "messaging.message_id": event.event_id,
+            },
+        ):
+            await self.connect()
 
-        message_body = event.model_dump_json().encode()
-        message = aio_pika.Message(
-            body=message_body,
-            delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
-            headers={"correlation_id": event.correlation_id} if event.correlation_id else {}
-        )
+            # Ensure exchange exists
+            exchange = await self.channel.declare_exchange(
+                "catalog.events", aio_pika.ExchangeType.TOPIC, durable=True
+            )
 
-        attempt = 0
-        while attempt < retries:
-            try:
-                await exchange.publish(message, routing_key=topic)
-                logger.debug(f"Published event {event.event_id} to {topic}")
-                return
-            except Exception as e:
-                attempt += 1
-                wait_time = 2 ** attempt
-                logger.warning(f"Failed to publish event (attempt {attempt}/{retries}): {str(e)}. Retrying in {wait_time}s...")
-                await asyncio.sleep(wait_time)
+            # Build headers with correlation_id and trace context
+            headers: Dict[str, Any] = {}
+            if event.correlation_id:
+                headers["correlation_id"] = event.correlation_id
 
-        raise RuntimeError(f"Could not publish event after {retries} attempts")
+            # Inject B3 trace context into headers
+            headers = inject_trace_context(headers)
+
+            message_body = event.model_dump_json().encode()
+            message = aio_pika.Message(
+                body=message_body,
+                delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
+                headers=headers,
+            )
+
+            attempt = 0
+            while attempt < retries:
+                try:
+                    await exchange.publish(message, routing_key=topic)
+                    logger.debug(f"Published event {event.event_id} to {topic}")
+                    return
+                except Exception as e:
+                    attempt += 1
+                    wait_time = 2**attempt
+                    logger.warning(
+                        f"Failed to publish event (attempt {attempt}/{retries}): {e!s}. "
+                        f"Retrying in {wait_time}s..."
+                    )
+                    await asyncio.sleep(wait_time)
+
+            raise RuntimeError(f"Could not publish event after {retries} attempts")
 
     async def close(self):
         """Close connection."""
@@ -65,9 +144,12 @@ class RabbitMQPublisher:
 
 class RabbitMQConsumer:
     """
-    Asynchronous RabbitMQ consumer for handling incoming events.
+    Asynchronous RabbitMQ consumer with trace context extraction.
     """
-    def __init__(self, amqp_url: str, queue_name: str, exchange_name: str, routing_key: str):
+
+    def __init__(
+        self, amqp_url: str, queue_name: str, exchange_name: str, routing_key: str
+    ):
         self.amqp_url = amqp_url
         self.queue_name = queue_name
         self.exchange_name = exchange_name
@@ -96,11 +178,21 @@ class RabbitMQConsumer:
             logger.info(f"Consumer connected and bound to {self.routing_key}")
             return queue
 
-    async def consume(self, callback):
+    async def consume(
+        self,
+        callback: Callable[[Dict[str, Any], Optional[Dict[str, Any]]], Any],
+    ):
         """
-        Starts consuming messages.
+        Starts consuming messages with automatic trace context extraction.
+
         'callback' should be an async function that takes (message_body, headers).
+        A new span is created for each consumed message, linked to the producer span.
+
+        Args:
+            callback: Async function to process each message.
         """
+        tracer = trace.get_tracer(__name__)
+
         while not self.stop_event.is_set():
             try:
                 queue = await self.connect()
@@ -112,19 +204,31 @@ class RabbitMQConsumer:
 
                         async with message.process():
                             try:
-                                body = json.loads(message.body.decode())
-                                headers = message.headers
-                                await callback(body, headers)
+                                # Extract trace context from message headers
+                                headers = dict(message.headers) if message.headers else {}
+                                ctx = extract_trace_context(headers)
+
+                                # Create CONSUMER span linked to producer
+                                with tracer.start_as_current_span(
+                                    f"CONSUME {self.queue_name}",
+                                    context=ctx,
+                                    kind=SpanKind.CONSUMER,
+                                    attributes={
+                                        "messaging.system": "rabbitmq",
+                                        "messaging.source": self.queue_name,
+                                        "messaging.operation": "receive",
+                                    },
+                                ):
+                                    body = json.loads(message.body.decode())
+                                    await callback(body, headers)
+
                             except Exception as e:
-                                logger.error(f"Error processing message: {str(e)}")
-                                # message.process() handles nack if exception is raised,
-                                # but we caught it. If we want requeue, we should raise or
-                                # use custom ack/nack logic. For now, we log and move on
-                                # to prevent poison pills from blocking the queue.
+                                logger.error(f"Error processing message: {e!s}")
+                                # Log and continue to prevent poison pills
 
             except Exception as e:
                 if not self.stop_event.is_set():
-                    logger.error(f"Consumer error: {str(e)}. Retrying in 5s...")
+                    logger.error(f"Consumer error: {e!s}. Retrying in 5s...")
                     await asyncio.sleep(5)
 
     def stop(self):

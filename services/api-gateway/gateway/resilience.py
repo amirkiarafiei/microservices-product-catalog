@@ -2,7 +2,7 @@ import asyncio
 import logging
 import time
 from enum import Enum
-from typing import Callable, Any, Optional
+from typing import Any, Callable, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class AsyncCircuitBreaker:
                 self.state = CircuitState.HALF_OPEN
             else:
                 raise CircuitBreakerError(f"Circuit {self.name} is OPEN")
-        
+
     async def _on_success(self):
         if self.state == CircuitState.HALF_OPEN:
             logger.info(f"Circuit {self.name} transitioning to CLOSED")
@@ -58,7 +58,7 @@ class AsyncCircuitBreaker:
     async def _on_failure(self, e: Exception):
         self.fail_count += 1
         self.last_failure_time = time.time()
-        
+
         if self.state == CircuitState.HALF_OPEN or self.fail_count >= self.fail_max:
             if self.state != CircuitState.OPEN:
                 logger.error(f"Circuit {self.name} transitioning to OPEN due to: {str(e)}")

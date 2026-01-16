@@ -1,15 +1,11 @@
 """initial_migration
 
 Revision ID: fdb2400b7f5a
-Revises: 
+Revises:
 Create Date: 2026-01-08 14:21:27.302094
 
 """
 from typing import Sequence, Union
-
-from alembic import op
-import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
 revision: str = 'fdb2400b7f5a'

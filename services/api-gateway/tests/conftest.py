@@ -1,5 +1,6 @@
 import os
 import sys
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -9,6 +10,7 @@ sys.path.insert(0, BASE_DIR)
 
 from gateway.main import app, breakers  # noqa: E402
 from gateway.resilience import CircuitState  # noqa: E402
+
 
 @pytest.fixture
 def client():

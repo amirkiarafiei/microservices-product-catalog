@@ -1,3 +1,9 @@
+"""
+Offering Service - Manage Product Offerings and Lifecycle.
+
+Provides CRUD operations for product offerings with saga orchestration for publication.
+"""
+
 import asyncio
 import uuid
 from contextlib import asynccontextmanager
@@ -9,6 +15,7 @@ from common.logging import setup_logging
 from common.messaging import RabbitMQPublisher
 from common.schemas import ErrorDetail, ErrorResponse
 from common.security import RoleChecker, get_current_user, security
+from common.tracing import instrument_fastapi, instrument_httpx, setup_tracing
 from fastapi import Depends, FastAPI, Query, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -19,8 +26,18 @@ from .config import settings
 from .infrastructure.database import SessionLocal, get_db
 from .infrastructure.models import OutboxORM
 
-# Setup logging
+# Setup logging first
 logger = setup_logging(settings.SERVICE_NAME, settings.LOG_LEVEL)
+
+# Setup tracing
+setup_tracing(
+    service_name=settings.SERVICE_NAME,
+    zipkin_endpoint=settings.ZIPKIN_ENDPOINT,
+    enabled=settings.TRACING_ENABLED,
+)
+
+# Instrument HTTPX for outgoing requests (Camunda calls)
+instrument_httpx()
 
 # Global background tasks
 outbox_task = None
@@ -35,11 +52,18 @@ async def lifespan(app: FastAPI):
     publisher = RabbitMQPublisher(settings.RABBITMQ_URL)
 
     # Initialize Outbox Listener
-    dsn = settings.DATABASE_URL.replace("postgresql://", "postgres://") if settings.DATABASE_URL else None
+    dsn = (
+        settings.DATABASE_URL.replace("postgresql://", "postgres://")
+        if settings.DATABASE_URL
+        else None
+    )
 
     if dsn:
         listener = OutboxListener(
-            dsn=dsn, publisher=publisher, outbox_model=OutboxORM, session_factory=SessionLocal
+            dsn=dsn,
+            publisher=publisher,
+            outbox_model=OutboxORM,
+            session_factory=SessionLocal,
         )
         outbox_task = asyncio.create_task(listener.run())
         logger.info("Outbox listener background task started")
@@ -66,6 +90,9 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+# Instrument FastAPI for tracing
+instrument_fastapi(app, excluded_urls="health")
 
 
 @app.exception_handler(AppException)
@@ -94,7 +121,9 @@ async def custom_app_exception_handler(request, exc: AppException):
 
 # Security dependency override to inject public key
 def get_current_user_with_key(token=Depends(security)):
-    public_key = settings.JWT_PUBLIC_KEY.replace("\\n", "\n") if settings.JWT_PUBLIC_KEY else None
+    public_key = (
+        settings.JWT_PUBLIC_KEY.replace("\\n", "\n") if settings.JWT_PUBLIC_KEY else None
+    )
     return get_current_user(token=token, public_key=public_key, algorithm=settings.JWT_ALGORITHM)
 
 
@@ -137,7 +166,9 @@ def get_offering(offering_id: uuid.UUID, db: Session = Depends(get_db)):
     dependencies=[Depends(any_user_required)],
 )
 def list_offerings(
-    skip: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=1000), db: Session = Depends(get_db)
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    db: Session = Depends(get_db),
 ):
     service = OfferingService(db)
     return service.list_offerings(skip=skip, limit=limit)
@@ -148,7 +179,9 @@ def list_offerings(
     response_model=OfferingRead,
     dependencies=[Depends(admin_required)],
 )
-async def update_offering(offering_id: uuid.UUID, offering_in: OfferingUpdate, db: Session = Depends(get_db)):
+async def update_offering(
+    offering_id: uuid.UUID, offering_in: OfferingUpdate, db: Session = Depends(get_db)
+):
     service = OfferingService(db)
     return await service.update_offering(offering_id, offering_in)
 
