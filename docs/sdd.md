@@ -402,7 +402,7 @@ The system is composed of 6 autonomous services:
 | **Specification Service** | Write | **Resource Context.** Groups characteristics into technical specs. Validates dependencies synchronously. | ✅ Implemented (CRUD + Sync) |
 | **Pricing Service** | Write | **Commercial Context.** Manages monetary definitions. Supports "Locking" during active Sagas. | ✅ Implemented |
 | **Offering Service** | Write | **Product Context (Aggregate Root).** Bundles Specs + Prices. **Saga Orchestrator** for publication lifecycle. | ✅ Implemented (Lifecycle + Validation) |
-| **Store Query Service** | Read | **Sales Context (CQRS View).** Consumes events to build a read-optimized, searchable catalog (Elasticsearch/Mongo). | ⏳ Pending |
+| **Store Query Service** | Read | **Sales Context (CQRS View).** Consumes events to build a read-optimized, searchable catalog (Elasticsearch/Mongo). | ✅ Implemented (CQRS + Search) |
 
 ---
 
