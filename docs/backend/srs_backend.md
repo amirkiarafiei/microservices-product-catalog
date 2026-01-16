@@ -415,12 +415,18 @@ Each service must implement an External Task Worker that:
 - Handles retries with exponential backoff
 - Logs all actions with correlation IDs
 
+**Integration Points:**
+- Outbox table for transactional event publishing
+- RabbitMQ topic (Publish): `product.offering.events`
+- Synchronous HTTP calls to Specification Service and Pricing Service for ID validation before publication.
+- Future: Camunda BPMN orchestration for the publication saga.
+
 **Error Scenarios:**
-- Validation failure before saga → 400 Bad Request
+- Invalid specification/pricing ID → 400 Bad Request
+- Offering not in DRAFT for updates/deletion → 400 Bad Request
+- Requirements for publication not met (min 1 spec, 1 price, 1 channel) → 400 Bad Request
 - Specification/Pricing service unavailable → 503 Service Unavailable
-- Saga task failure → Automatic compensation, return to DRAFT
-- Already published → 409 Conflict
-- Not in correct state → 409 Conflict
+- Not found → 404 Not Found
 
 ---
 
@@ -1749,6 +1755,10 @@ uv run uvicorn src.main:app --reload --port 8002
 # For Pricing Service (uses internal module naming)
 cd services/pricing-service
 uv run uvicorn pricing.main:app --reload --port 8004
+
+# For Offering Service (uses internal module naming)
+cd services/offering-service
+uv run uvicorn offering.main:app --reload --port 8005
 
 # Run all services
 docker-compose up
