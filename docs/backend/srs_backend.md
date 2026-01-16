@@ -218,6 +218,12 @@ The backend system consists of six microservices orchestrated through an API Gat
 - Referenced by offerings → 409 Conflict
 - Duplicate name → 409 Conflict
 
+**Integration Points:**
+- Outbox table for transactional event publishing
+- RabbitMQ topic (Subscribe): `resource.characteristics.events`
+- RabbitMQ topic (Publish): `resource.specifications.events`
+- No synchronous calls to other services
+
 ---
 
 #### 3.2.3 Pricing Service (Write Service)
@@ -1353,6 +1359,7 @@ CREATE TABLE specifications (
 -- Local Cache for Characteristics (Validation Autonomy)
 CREATE TABLE cached_characteristics (
     id UUID PRIMARY KEY,
+    name VARCHAR(200),
     last_updated_at TIMESTAMP DEFAULT NOW()
 );
 

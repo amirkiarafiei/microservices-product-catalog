@@ -399,7 +399,7 @@ The system is composed of 6 autonomous services:
 | :--- | :--- | :--- | :--- |
 | **Identity Service** | Utility | **Authentication.** Issues and validates JWTs (RS256). Implements Zero Trust security with locally generated RSA key pairs. | ✅ Implemented |
 | **Characteristic Service** | Write | **Resource Context.** Manages atomic attributes (e.g., "Internet Speed", "Color"). Uses Outbox Pattern. | ✅ Implemented (CRUD + Events) |
-| **Specification Service** | Write | **Resource Context.** Groups characteristics into technical specs. Validates dependencies synchronously. | ⏳ Pending |
+| **Specification Service** | Write | **Resource Context.** Groups characteristics into technical specs. Validates dependencies synchronously. | ✅ Implemented (CRUD + Sync) |
 | **Pricing Service** | Write | **Commercial Context.** Manages monetary definitions. Supports "Locking" during active Sagas. | ⏳ Pending |
 | **Offering Service** | Write | **Product Context (Aggregate Root).** Bundles Specs + Prices. **Saga Orchestrator** for publication lifecycle. | ⏳ Pending |
 | **Store Query Service** | Read | **Sales Context (CQRS View).** Consumes events to build a read-optimized, searchable catalog (Elasticsearch/Mongo). | ⏳ Pending |
