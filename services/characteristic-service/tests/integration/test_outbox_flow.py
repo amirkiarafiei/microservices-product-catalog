@@ -1,14 +1,14 @@
-import pytest
 import asyncio
-import uuid
-import aio_pika
 import json
-from sqlalchemy.orm import Session
-from src.application.service import CharacteristicService
+import uuid
+
+import aio_pika
+import pytest
 from src.application.schemas import CharacteristicCreate
-from src.domain.models import UnitOfMeasure
-from src.infrastructure.models import CharacteristicORM, OutboxORM
 from src.config import settings
+from src.domain.models import UnitOfMeasure
+from src.infrastructure.models import OutboxORM
+
 
 @pytest.mark.asyncio
 async def test_outbox_flow_e2e(db_session, client):
@@ -20,29 +20,28 @@ async def test_outbox_flow_e2e(db_session, client):
     4. Since the background listener is running in the 'app' used by 'client',
        we should eventually see the status change to 'SENT'.
     """
-    service = CharacteristicService(db_session)
     char_in = CharacteristicCreate(
         name=f"Outbox Test {uuid.uuid4()}",
         value="100",
         unit_of_measure=UnitOfMeasure.MBPS
     )
-    
+
     # 1. Create via API
     response = client.post(
-        "/api/v1/characteristics", 
+        "/api/v1/characteristics",
         json=char_in.model_dump(mode='json')
     )
     assert response.status_code == 201
     created_id = response.json()["id"]
-    
+
     # 2. Verify outbox entry exists and is PENDING (or already SENT if listener is fast)
     # We query all and filter in Python to avoid SQLAlchemy JSON vs JSONB vs cast issues in tests
     all_outbox = db_session.query(OutboxORM).all()
     outbox_entry = next((r for r in all_outbox if str(r.payload['payload']['id']) == str(created_id)), None)
-    
+
     assert outbox_entry is not None
     assert outbox_entry.topic == "resource.characteristics.events"
-    
+
     # 3. Wait for the background listener to process it
     # We poll the DB for a few seconds
     max_retries = 20 # Increased retries
@@ -53,7 +52,7 @@ async def test_outbox_flow_e2e(db_session, client):
             processed = True
             break
         await asyncio.sleep(0.5)
-    
+
     assert processed, f"Outbox entry status was {outbox_entry.status}, expected SENT"
     assert outbox_entry.processed_at is not None
 
@@ -70,7 +69,7 @@ async def test_rabbitmq_message_received(db_session, client):
     )
     queue = await channel.declare_queue(exclusive=True)
     await queue.bind(exchange, routing_key="resource.characteristics.events")
-    
+
     # 2. Create characteristic via API
     unique_name = f"MQ Test {uuid.uuid4()}"
     char_in = CharacteristicCreate(
@@ -79,11 +78,11 @@ async def test_rabbitmq_message_received(db_session, client):
         unit_of_measure=UnitOfMeasure.GB
     )
     response = client.post(
-        "/api/v1/characteristics", 
+        "/api/v1/characteristics",
         json=char_in.model_dump(mode='json')
     )
     assert response.status_code == 201
-    
+
     # 3. Wait for message
     try:
         async with asyncio.timeout(10): # Add 10s timeout

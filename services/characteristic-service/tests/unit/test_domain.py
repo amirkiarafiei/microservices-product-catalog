@@ -1,7 +1,8 @@
-import pytest
 import uuid
 from datetime import datetime, timezone
+
 from src.domain.models import Characteristic, UnitOfMeasure
+
 
 def test_characteristic_creation():
     char_id = uuid.uuid4()
@@ -14,7 +15,7 @@ def test_characteristic_creation():
         created_at=now,
         updated_at=now
     )
-    
+
     assert char.id == char_id
     assert char.name == "Internet Speed"
     assert char.value == "100"

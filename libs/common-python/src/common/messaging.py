@@ -1,8 +1,8 @@
-import json
-import logging
 import asyncio
-from typing import Any, Dict
+import logging
+
 import aio_pika
+
 from .schemas import Event
 
 logger = logging.getLogger(__name__)
@@ -19,15 +19,15 @@ class RabbitMQPublisher:
     async def connect(self):
         """Establish connection to RabbitMQ."""
         if not self.connection or self.connection.is_closed:
-                self.connection = await aio_pika.connect_robust(self.amqp_url)
-                self.channel = await self.connection.channel()
+            self.connection = await aio_pika.connect_robust(self.amqp_url)
+            self.channel = await self.connection.channel()
             logger.info("Connected to RabbitMQ")
 
     async def publish(self, topic: str, event: Event, retries: int = 3):
         """
         Publishes an event to a specific topic exchange.
         """
-            await self.connect()
+        await self.connect()
 
         # Ensure exchange exists
         exchange = await self.channel.declare_exchange(
@@ -52,7 +52,7 @@ class RabbitMQPublisher:
                 wait_time = 2 ** attempt
                 logger.warning(f"Failed to publish event (attempt {attempt}/{retries}): {str(e)}. Retrying in {wait_time}s...")
                 await asyncio.sleep(wait_time)
-        
+
         raise RuntimeError(f"Could not publish event after {retries} attempts")
 
     async def close(self):

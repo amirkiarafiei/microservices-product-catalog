@@ -1,7 +1,9 @@
 import os
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config, pool
+
 from alembic import context
+from sqlalchemy import engine_from_config, pool
+
 
 def run_migrations(target_metadata):
     """
@@ -39,10 +41,10 @@ def run_migrations(target_metadata):
         configuration = config.get_section(config.config_ini_section)
         if configuration is None:
             configuration = {}
-        
+
         # Override the sqlalchemy.url with the environment variable
         configuration["sqlalchemy.url"] = get_url()
-        
+
         connectable = engine_from_config(
             configuration,
             prefix="sqlalchemy.",

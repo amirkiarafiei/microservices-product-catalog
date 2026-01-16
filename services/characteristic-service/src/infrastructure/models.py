@@ -1,11 +1,13 @@
 import uuid
-from sqlalchemy import Column, String, DateTime, Enum as SQLEnum, Text
-from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime, timezone
 
-from .database import Base
-from ..domain.models import UnitOfMeasure
 from common.database.outbox import OutboxMixin
+from sqlalchemy import Column, DateTime, String
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import UUID
+
+from ..domain.models import UnitOfMeasure
+from .database import Base
 
 
 class CharacteristicORM(Base):

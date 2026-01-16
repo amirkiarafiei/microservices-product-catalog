@@ -1,8 +1,9 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import jwt, JWTError
 import logging
-from typing import List, Optional
+from typing import List
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError, jwt
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -16,17 +17,17 @@ class UserContext(BaseModel):
 def get_current_user(
     token: HTTPAuthorizationCredentials = Depends(security),
     # In a real microservice, you'd pass the public key via env or fetch it once
-    public_key: str = None, 
+    public_key: str = None,
     algorithm: str = "RS256"
 ) -> UserContext:
     """
     FastAPI dependency to validate JWT token and return user context.
-    
+
     Args:
         token: The bearer token from the request.
         public_key: The RSA public key for verification.
         algorithm: The signing algorithm.
-        
+
     Returns:
         UserContext object with user details.
     """
@@ -41,15 +42,15 @@ def get_current_user(
         user_id: str = payload.get("sub")
         username: str = payload.get("username")
         role: str = payload.get("role")
-        
+
         if user_id is None or username is None or role is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token payload",
             )
-            
+
         return UserContext(user_id=user_id, username=username, role=role)
-        
+
     except JWTError as e:
         logger.error(f"JWT validation failed: {str(e)}")
         raise HTTPException(

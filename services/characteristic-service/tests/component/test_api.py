@@ -1,6 +1,5 @@
-import pytest
 from fastapi import status
-import uuid
+
 
 def test_create_characteristic_api(client):
     response = client.post(
@@ -23,7 +22,7 @@ def test_get_characteristic_api(client):
         json={"name": "To Get", "value": "1", "unit_of_measure": "GB"}
     )
     char_id = create_res.json()["id"]
-    
+
     # Get it
     response = client.get(f"/api/v1/characteristics/{char_id}")
     assert response.status_code == status.HTTP_200_OK
@@ -32,7 +31,7 @@ def test_get_characteristic_api(client):
 def test_list_characteristics_api(client):
     client.post("/api/v1/characteristics", json={"name": "C1", "value": "1", "unit_of_measure": "GB"})
     client.post("/api/v1/characteristics", json={"name": "C2", "value": "2", "unit_of_measure": "GB"})
-    
+
     response = client.get("/api/v1/characteristics")
     assert response.status_code == status.HTTP_200_OK
     assert len(response.json()) >= 2
@@ -43,7 +42,7 @@ def test_update_characteristic_api(client):
         json={"name": "To Update", "value": "1", "unit_of_measure": "GB"}
     )
     char_id = create_res.json()["id"]
-    
+
     response = client.put(
         f"/api/v1/characteristics/{char_id}",
         json={"name": "Updated API", "value": "10"}
@@ -58,10 +57,10 @@ def test_delete_characteristic_api(client):
         json={"name": "To Delete", "value": "1", "unit_of_measure": "GB"}
     )
     char_id = create_res.json()["id"]
-    
+
     response = client.delete(f"/api/v1/characteristics/{char_id}")
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    
+
     # Verify it's gone
     get_res = client.get(f"/api/v1/characteristics/{char_id}")
     assert get_res.status_code == status.HTTP_404_NOT_FOUND

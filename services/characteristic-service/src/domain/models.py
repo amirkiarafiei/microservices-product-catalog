@@ -1,8 +1,7 @@
-from enum import Enum
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
-import uuid
+from enum import Enum
 
 
 class UnitOfMeasure(str, Enum):
@@ -47,7 +46,7 @@ class Characteristic:
             raise ValueError("Name must be between 1 and 200 characters")
         if not self.value or not (1 <= len(self.value) <= 100):
             raise ValueError("Value must be between 1 and 100 characters")
-        # UnitOfMeasure is already validated by Enum if passed correctly, 
+        # UnitOfMeasure is already validated by Enum if passed correctly,
         # but we check if it is part of the Enum.
         if not isinstance(self.unit_of_measure, UnitOfMeasure):
              raise ValueError(f"Invalid UnitOfMeasure: {self.unit_of_measure}")

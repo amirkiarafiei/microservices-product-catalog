@@ -1,27 +1,26 @@
-from fastapi import FastAPI, Depends, status, Query
-from sqlalchemy.orm import Session
-from typing import List
-import uuid
-
-from common.logging import setup_logging
-from common.exceptions import AppException
-from common.schemas import ErrorResponse, ErrorDetail
-from common.security import get_current_user, RoleChecker, UserContext, security
-
-from .config import settings
-from .infrastructure.database import get_db
-from .application.schemas import CharacteristicCreate, CharacteristicUpdate, CharacteristicRead
-from .application.service import CharacteristicService
-from .infrastructure.models import OutboxORM
-from .infrastructure.database import SessionLocal
-from common.database.outbox import OutboxListener
-from common.messaging import RabbitMQPublisher
 import asyncio
+import uuid
+from contextlib import asynccontextmanager
+from typing import List
+
+from common.database.outbox import OutboxListener
+from common.exceptions import AppException
+from common.logging import setup_logging
+from common.messaging import RabbitMQPublisher
+from common.schemas import ErrorDetail, ErrorResponse
+from common.security import RoleChecker, get_current_user, security
+from fastapi import Depends, FastAPI, Query, status
+from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session
+
+from .application.schemas import CharacteristicCreate, CharacteristicRead, CharacteristicUpdate
+from .application.service import CharacteristicService
+from .config import settings
+from .infrastructure.database import SessionLocal, get_db
+from .infrastructure.models import OutboxORM
 
 # Setup logging
 logger = setup_logging(settings.SERVICE_NAME, settings.LOG_LEVEL)
-
-from contextlib import asynccontextmanager
 
 # Global background task
 outbox_task = None
@@ -30,14 +29,14 @@ outbox_task = None
 async def lifespan(app: FastAPI):
     global outbox_task
     logger.info("Starting up characteristic-service")
-    
+
     # Initialize RabbitMQ Publisher
     publisher = RabbitMQPublisher(settings.RABBITMQ_URL)
-    
+
     # Initialize Outbox Listener
     # DSN for asyncpg (needs to be postgres:// instead of postgresql://)
     dsn = settings.DATABASE_URL.replace("postgresql://", "postgres://") if settings.DATABASE_URL else None
-    
+
     if dsn:
         listener = OutboxListener(
             dsn=dsn,
@@ -45,7 +44,7 @@ async def lifespan(app: FastAPI):
             outbox_model=OutboxORM,
             session_factory=SessionLocal
         )
-        
+
         # Start as background task
         outbox_task = asyncio.create_task(listener.run())
         logger.info("Outbox listener background task started")
@@ -53,7 +52,7 @@ async def lifespan(app: FastAPI):
         logger.warning("DATABASE_URL not set, outbox listener not started")
 
     yield
-    
+
     if outbox_task:
         outbox_task.cancel()
         try:
@@ -70,7 +69,6 @@ app = FastAPI(
 )
 
 # Exception handler for standardized error responses
-from fastapi.responses import JSONResponse
 
 @app.exception_handler(AppException)
 async def custom_app_exception_handler(request, exc: AppException):
@@ -87,7 +85,7 @@ async def custom_app_exception_handler(request, exc: AppException):
         status_code = status.HTTP_403_FORBIDDEN
     elif exc.code == "INTERNAL_ERROR":
         status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-    
+
     return JSONResponse(
         status_code=status_code,
         content=ErrorResponse(
@@ -114,8 +112,8 @@ any_user_required = RoleChecker(allowed_roles=["ADMIN", "USER"])
 async def health_check():
     return {"status": "healthy", "service": settings.SERVICE_NAME}
 
-@app.post("/api/v1/characteristics", 
-          response_model=CharacteristicRead, 
+@app.post("/api/v1/characteristics",
+          response_model=CharacteristicRead,
           status_code=status.HTTP_201_CREATED,
           dependencies=[Depends(admin_required)])
 def create_characteristic(
@@ -125,7 +123,7 @@ def create_characteristic(
     service = CharacteristicService(db)
     return service.create_characteristic(char_in)
 
-@app.get("/api/v1/characteristics/{char_id}", 
+@app.get("/api/v1/characteristics/{char_id}",
          response_model=CharacteristicRead,
          dependencies=[Depends(any_user_required)])
 def get_characteristic(
@@ -135,7 +133,7 @@ def get_characteristic(
     service = CharacteristicService(db)
     return service.get_characteristic(char_id)
 
-@app.get("/api/v1/characteristics", 
+@app.get("/api/v1/characteristics",
          response_model=List[CharacteristicRead],
          dependencies=[Depends(any_user_required)])
 def list_characteristics(
@@ -146,7 +144,7 @@ def list_characteristics(
     service = CharacteristicService(db)
     return service.list_characteristics(skip=skip, limit=limit)
 
-@app.put("/api/v1/characteristics/{char_id}", 
+@app.put("/api/v1/characteristics/{char_id}",
          response_model=CharacteristicRead,
          dependencies=[Depends(admin_required)])
 def update_characteristic(
@@ -157,7 +155,7 @@ def update_characteristic(
     service = CharacteristicService(db)
     return service.update_characteristic(char_id, char_in)
 
-@app.delete("/api/v1/characteristics/{char_id}", 
+@app.delete("/api/v1/characteristics/{char_id}",
             status_code=status.HTTP_204_NO_CONTENT,
             dependencies=[Depends(admin_required)])
 def delete_characteristic(

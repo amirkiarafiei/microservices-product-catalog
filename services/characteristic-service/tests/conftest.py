@@ -1,20 +1,19 @@
+import os
+import sys
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-import os
-import sys
 
 # Add src to path so we can import it
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 
-from src.infrastructure.database import Base, get_db
 import src.infrastructure.database as db_module
 import src.main as main_module
-from src.main import app, admin_required, any_user_required
-from src.config import settings
 from common.security import UserContext
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from src.config import settings
+from src.infrastructure.database import Base, get_db
+from src.main import admin_required, any_user_required, app
 
 # Test database URL
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "postgresql://user:password@localhost:5432/characteristic_test_db")
@@ -39,12 +38,12 @@ def setup_test_db():
     Creates and migrates the test database at the beginning of the test session.
     """
     engine = create_engine(TEST_DATABASE_URL)
-    
+
     # Create tables
     Base.metadata.create_all(bind=engine)
-    
+
     yield
-    
+
     # Clean up (optional: drop tables)
     # Base.metadata.drop_all(bind=engine)
 
@@ -56,7 +55,7 @@ def db_session():
     engine = create_engine(TEST_DATABASE_URL)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = SessionLocal()
-    
+
     try:
         yield session
     finally:
@@ -93,7 +92,7 @@ def client(override_get_db, mock_admin):
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[admin_required] = lambda: mock_admin
     app.dependency_overrides[any_user_required] = lambda: mock_admin
-    
+
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()

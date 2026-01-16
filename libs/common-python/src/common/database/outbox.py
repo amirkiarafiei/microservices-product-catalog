@@ -1,17 +1,17 @@
-import json
-import logging
 import asyncio
+import logging
 import uuid
-from typing import Any, Dict, Optional, Type
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, DateTime, JSON, Enum as SQLEnum
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import declarative_base, Session
-import asyncpg
 from enum import Enum
+from typing import Any
 
-from ..schemas import Event
+import asyncpg
+from sqlalchemy import JSON, Column, DateTime, String
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import declarative_base
+
 from ..messaging import RabbitMQPublisher
+from ..schemas import Event
 
 logger = logging.getLogger(__name__)
 
@@ -36,8 +36,8 @@ class OutboxListener:
     Listens for Postgres NOTIFY and processes pending outbox messages.
     """
     def __init__(
-        self, 
-        dsn: str, 
+        self,
+        dsn: str,
         publisher: RabbitMQPublisher,
         outbox_model: Any, # The actual SQLAlchemy model class
         session_factory: Any # A callable that returns a new DB session
@@ -55,12 +55,12 @@ class OutboxListener:
                 conn = await asyncpg.connect(self.dsn)
                 await conn.add_listener('outbox_events', self._handle_notification)
                 logger.info("Outbox listener started and waiting for notifications...")
-                
+
                 # Check for existing pending messages on startup
                 await self._process_pending()
 
                 while not self.stop_event.is_set():
-                    # Keep the connection alive and poll occasionally 
+                    # Keep the connection alive and poll occasionally
                     # as a fallback for missing notifications
                     await self._process_pending()
                     await asyncio.sleep(2)
@@ -74,7 +74,7 @@ class OutboxListener:
     def _handle_notification(self, connection, pid, channel, payload):
         """Callback when a notification is received."""
         logger.debug(f"Received notification on {channel}: {payload}")
-        # We don't necessarily need the ID from payload, 
+        # We don't necessarily need the ID from payload,
         # we can just trigger a process of all pending.
         asyncio.create_task(self._process_pending())
 
@@ -94,11 +94,11 @@ class OutboxListener:
                 logger.info(f"Found {len(pending)} pending outbox records")
 
             for record in pending:
-        try:
+                try:
                     # Construct Event object from payload
                     payload_dict = record.payload
                     event = Event(**payload_dict)
-            
+
                     # Publish to RabbitMQ (Wait for it)
                     # We use run_coroutine_threadsafe with the provided loop
                     future = asyncio.run_coroutine_threadsafe(
@@ -107,15 +107,15 @@ class OutboxListener:
                     )
                     future.result() # Wait for completion
 
-            record.status = "SENT"
-            record.processed_at = datetime.now(timezone.utc)
-            logger.debug(f"Successfully processed outbox record {record.id}")
-        except Exception as e:
-            logger.error(f"Failed to process outbox record {record.id}: {str(e)}")
-            record.status = "FAILED"
-            record.error_message = str(e)
-                
-            session.commit()
+                    record.status = "SENT"
+                    record.processed_at = datetime.now(timezone.utc)
+                    logger.debug(f"Successfully processed outbox record {record.id}")
+                except Exception as e:
+                    logger.error(f"Failed to process outbox record {record.id}: {str(e)}")
+                    record.status = "FAILED"
+                    record.error_message = str(e)
+
+                session.commit()
         except Exception as e:
             logger.error(f"Error in _process_pending_sync: {str(e)}")
         finally:

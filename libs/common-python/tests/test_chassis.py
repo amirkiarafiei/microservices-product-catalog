@@ -4,9 +4,9 @@ import pytest
 from common.config import BaseServiceSettings
 from common.exceptions import NotFoundError, ValidationError
 from common.logging import setup_logging
+from common.security import UserContext
 from common.utils.idempotency import idempotency_key_required
 from common.utils.versioning import check_version
-from common.security import UserContext
 
 
 def test_logging_output(capsys):
