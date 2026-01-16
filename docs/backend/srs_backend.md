@@ -280,6 +280,11 @@ The backend system consists of six microservices orchestrated through an API Gat
 - Price locked → 423 Locked (cannot modify)
 - Referenced by offerings → 409 Conflict
 
+**Integration Points:**
+- Outbox table for transactional event publishing
+- RabbitMQ topic: `commercial.pricing.events`
+- Supports Saga locking via `/lock` and `/unlock` endpoints for Offering Service orchestration
+
 ---
 
 #### 3.2.4 Product Offering Service (Write Service)
@@ -1380,7 +1385,18 @@ CREATE TABLE prices (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Outbox table
+CREATE TABLE outbox (
+    id UUID PRIMARY KEY,
+    topic VARCHAR(100) NOT NULL,
+    payload JSONB NOT NULL,
+    status VARCHAR(20) DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT NOW(),
+    processed_at TIMESTAMP,
+    error_message TEXT
+);
+
+CREATE INDEX idx_prices_name ON prices(name);
+CREATE INDEX idx_outbox_status_pricing ON outbox(status) WHERE status = 'PENDING';
 ```
 
 **Offering Service:**
@@ -1728,7 +1744,11 @@ docker-compose up -d postgres rabbitmq mongodb elasticsearch zipkin camunda
 
 # Run service locally for development
 cd services/characteristic-service
-uv run uvicorn src.main:app --reload --port 8001
+uv run uvicorn src.main:app --reload --port 8002
+
+# For Pricing Service (uses internal module naming)
+cd services/pricing-service
+uv run uvicorn pricing.main:app --reload --port 8004
 
 # Run all services
 docker-compose up
