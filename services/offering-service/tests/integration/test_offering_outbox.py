@@ -1,15 +1,17 @@
 import uuid
+from unittest.mock import AsyncMock, patch
+
 import pytest
-from sqlalchemy.orm import Session
 from offering.application.schemas import OfferingCreate
 from offering.application.service import OfferingService
 from offering.infrastructure.models import OutboxORM
-from unittest.mock import AsyncMock, patch
+from sqlalchemy.orm import Session
+
 
 @pytest.mark.asyncio
 async def test_offering_outbox_flow(db_session: Session):
     service = OfferingService(db_session)
-    
+
     offering_in = OfferingCreate(
         name=f"Integration Test Offering {uuid.uuid4()}",
         specification_ids=[uuid.uuid4()],

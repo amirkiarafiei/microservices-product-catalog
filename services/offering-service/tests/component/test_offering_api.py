@@ -1,19 +1,17 @@
 import uuid
 from unittest.mock import AsyncMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
-from offering.domain.models import LifecycleStatus
 
 
 @patch("offering.application.service.httpx.AsyncClient.get")
 def test_create_offering_success(mock_get, client: TestClient):
     # Mock validation responses
     mock_get.return_value = AsyncMock(status_code=200)
-    
+
     spec_id = uuid.uuid4()
     price_id = uuid.uuid4()
-    
+
     offering_data = {
         "name": "Super Bundle",
         "description": "A great bundle",
@@ -21,7 +19,7 @@ def test_create_offering_success(mock_get, client: TestClient):
         "pricing_ids": [str(price_id)],
         "sales_channels": ["WEB", "APP"]
     }
-    
+
     response = client.post("/api/v1/offerings", json=offering_data)
     assert response.status_code == 201
     created = response.json()
@@ -34,14 +32,14 @@ def test_create_offering_success(mock_get, client: TestClient):
 def test_create_offering_invalid_ids(mock_get, client: TestClient):
     # Mock validation response failure
     mock_get.return_value = AsyncMock(status_code=404)
-    
+
     offering_data = {
         "name": "Invalid Bundle",
         "specification_ids": [str(uuid.uuid4())],
         "pricing_ids": [],
         "sales_channels": []
     }
-    
+
     response = client.post("/api/v1/offerings", json=offering_data)
     assert response.status_code == 400
     assert "not found or invalid" in response.json()["error"]["message"]
