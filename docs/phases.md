@@ -127,8 +127,8 @@ Here is your **Incremental Roadmap**.
         *   **Data Consistency:** Unique name constraints and unit validation enforced.
         *   **Security:** Integrated with `common-python` security module for JWT/RBAC.
         *   **Verified:** Comprehensive test suite implemented (Unit, Integration, and Component tests) with 100% pass rate.
-    
-    ### Phase 6: The Event Engine (Transactional Outbox)
+
+### Phase 6: The Event Engine (Transactional Outbox)
 
 **Goal:** Enable reliable async messaging without breaking the DB transaction.
 
@@ -150,6 +150,11 @@ Here is your **Incremental Roadmap**.
     *   Create a Characteristic via API.
     *   Check Postgres `outbox` table (status: SENT).
     *   Check RabbitMQ Management UI for message in `resource.characteristics.events` queue.
+*   **Status Update (Jan 16, 2026):**
+    *   **Event Engine Implemented:** Extended `common-python` with `Event` schemas, `RabbitMQPublisher`, and `OutboxListener`.
+    *   **Reliability:** Implemented Transactional Outbox pattern using Postgres triggers and LISTEN/NOTIFY for real-time event processing with periodic polling fallback.
+    *   **Integration:** Updated `CharacteristicService` to atomically persist domain events (`CharacteristicCreated`, `Updated`, `Deleted`) alongside business data.
+    *   **Verified:** Full E2E outbox flow tested: API call -> Outbox record (PENDING) -> Listener -> RabbitMQ -> Outbox record (SENT).
 
 ### Phase 7: Dependency Management (Specification Service)
 

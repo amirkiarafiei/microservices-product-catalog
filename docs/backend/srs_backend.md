@@ -694,8 +694,8 @@ Each service must implement an External Task Worker that:
 - Idempotency check integration
 
 #### 4.1.4 Outbox Module
-- Outbox table model (id, topic, payload, status, created_at)
-- Postgres LISTEN/NOTIFY listener implementation
+- Outbox table model (id, topic, payload, status, created_at, processed_at, error_message)
+- Postgres LISTEN/NOTIFY listener implementation with periodic polling fallback
 - Background thread/task for event relay
 - Status tracking (PENDING → SENT → FAILED)
 
@@ -839,9 +839,10 @@ If time permits, expose Prometheus metrics:
   "event_id": "uuid",
   "event_type": "OfferingPublished",
   "schema_version": "1.0",
+  "entity_version": 1,
   "timestamp": "ISO8601",
   "correlation_id": "uuid",
-  "payload": { domain-specific data }
+  "payload": { "domain-specific data" }
 }
 ```
 
@@ -1331,7 +1332,9 @@ CREATE TABLE outbox (
     topic VARCHAR(100) NOT NULL,
     payload JSONB NOT NULL,
     status VARCHAR(20) DEFAULT 'PENDING',
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    processed_at TIMESTAMP,
+    error_message TEXT
 );
 
 CREATE INDEX idx_outbox_status ON outbox(status) WHERE status = 'PENDING';
