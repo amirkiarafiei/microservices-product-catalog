@@ -209,6 +209,13 @@ Here is your **Incremental Roadmap**.
     *   Try to delete locked price → 423 Locked.
     *   Unlock price → locked=false.
 
+**Status Update (Jan 16, 2026):**
+*   **Pricing Service Implemented:** Established the service with full CRUD capabilities and Saga locking support.
+*   **Domain Logic:** Enforced positive price values and unique name constraints.
+*   **Saga Integration:** Implemented `lock` and `unlock` endpoints to support distributed transactions.
+*   **Transactional Outbox:** Integrated for all pricing events (`PriceCreated`, `Updated`, `Deleted`, `Locked`, `Unlocked`).
+*   **Verified:** Comprehensive tests (Unit, Integration, Component) passed, ensuring reliability and correct behavior under lock.
+
 ### Phase 9: The Aggregate Root (Offering Service - Part 1)
 
 **Goal:** Manage the complex Lifecycle State Machine.
