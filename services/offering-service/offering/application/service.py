@@ -1,3 +1,4 @@
+import logging
 import uuid
 from typing import List
 
@@ -17,6 +18,8 @@ from .events import (
     OfferingUpdated,
 )
 from .schemas import OfferingCreate, OfferingUpdate
+
+logger = logging.getLogger(__name__)
 
 
 class OfferingService:
@@ -133,17 +136,26 @@ class OfferingService:
         event = OfferingPublicationInitiated(payload=offering_domain.model_dump(mode="json"))
         self._add_to_outbox("product.offering.events", event)
 
-        # Mocked part: immediately confirm publication for now as per Phase 9 notes
-        # "Mock the publish() to simply change state for now (no Camunda yet)"
-        # "State changes to PUBLISHING -> PUBLISHED (mocked)"
+        # Start Camunda Saga
+        async with httpx.AsyncClient() as client:
+            try:
+                # Variables to pass to the saga
+                variables = {
+                    "offeringId": {"value": str(offering_id), "type": "String"},
+                    "specificationIds": {"value": [str(sid) for sid in offering_orm.specification_ids], "type": "Object", "valueInfo": {"objectTypeName": "java.util.ArrayList", "serializationDataFormat": "application/json"}},
+                    "pricingIds": {"value": [str(pid) for pid in offering_orm.pricing_ids], "type": "Object", "valueInfo": {"objectTypeName": "java.util.ArrayList", "serializationDataFormat": "application/json"}},
+                }
 
-        offering_domain.confirm_publication()
-        offering_orm.lifecycle_status = offering_domain.lifecycle_status.value
-        offering_orm.published_at = offering_domain.published_at
-        offering_orm.updated_at = offering_domain.updated_at
-
-        pub_event = OfferingPublished(payload=offering_domain.model_dump(mode="json"))
-        self._add_to_outbox("product.offering.events", pub_event)
+                resp = await client.post(
+                    f"{settings.CAMUNDA_URL}/process-definition/key/offering-publication-saga/start",
+                    json={"variables": variables},
+                    timeout=10.0
+                )
+                if resp.status_code != 200:
+                    logger.error(f"Failed to start Camunda process: {resp.status_code} - {resp.text}")
+                    # In a real system, we might want to retry or fail the initiation
+            except httpx.RequestError as e:
+                logger.error(f"Could not connect to Camunda: {str(e)}")
 
         self.db.commit()
         return offering_orm
@@ -165,6 +177,44 @@ class OfferingService:
 
         event = OfferingRetired(payload=offering_domain.model_dump(mode="json"))
         self._add_to_outbox("product.offering.events", event)
+
+        self.db.commit()
+        return offering_orm
+
+    def confirm_publication(self, offering_id: uuid.UUID) -> ProductOfferingORM:
+        offering_orm = self.get_offering(offering_id)
+        offering_domain = offering_orm.to_domain()
+
+        try:
+            offering_domain.confirm_publication()
+        except ValueError as e:
+            raise AppException(str(e), code="BAD_REQUEST")
+
+        offering_orm.lifecycle_status = offering_domain.lifecycle_status.value
+        offering_orm.published_at = offering_domain.published_at
+        offering_orm.updated_at = offering_domain.updated_at
+
+        self.db.flush()
+
+        event = OfferingPublished(payload=offering_domain.model_dump(mode="json"))
+        self._add_to_outbox("product.offering.events", event)
+
+        self.db.commit()
+        return offering_orm
+
+    def fail_publication(self, offering_id: uuid.UUID) -> ProductOfferingORM:
+        offering_orm = self.get_offering(offering_id)
+        offering_domain = offering_orm.to_domain()
+
+        offering_domain.fail_publication()
+        offering_orm.lifecycle_status = offering_domain.lifecycle_status.value
+        offering_orm.updated_at = offering_domain.updated_at
+
+        self.db.flush()
+
+        # We can add an OfferingPublicationFailed event if needed
+        # event = OfferingPublicationFailed(payload=offering_domain.model_dump(mode="json"))
+        # self._add_to_outbox("product.offering.events", event)
 
         self.db.commit()
         return offering_orm

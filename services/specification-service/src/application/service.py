@@ -112,3 +112,12 @@ class SpecificationService:
         self._add_to_outbox("resource.specifications.events", event)
 
         self.db.commit()
+
+    def validate_specifications(self, spec_ids: List[uuid.UUID]):
+        """
+        Validates a list of specification IDs.
+        Raises AppException if any ID is missing.
+        """
+        for spec_id in spec_ids:
+            # get_specification already raises AppException if not found
+            self.get_specification(spec_id)

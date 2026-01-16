@@ -8,17 +8,16 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
 sys.path = [p for p in sys.path if not p.endswith("/src")]
 sys.path.insert(0, BASE_DIR)
 
+import pricing.infrastructure.database as db_module  # noqa: E402
+import pricing.main as main_module  # noqa: E402
 import pytest  # noqa: E402
 from common.security import UserContext  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
-from sqlalchemy import create_engine  # noqa: E402
-from sqlalchemy.orm import sessionmaker  # noqa: E402
-
-import pricing.infrastructure.database as db_module  # noqa: E402
-import pricing.main as main_module  # noqa: E402
 from pricing.config import settings  # noqa: E402
 from pricing.infrastructure.database import Base, get_db  # noqa: E402
 from pricing.main import admin_required, any_user_required, app  # noqa: E402
+from sqlalchemy import create_engine  # noqa: E402
+from sqlalchemy.orm import sessionmaker  # noqa: E402
 
 # Test database URL
 TEST_DATABASE_URL = os.getenv(

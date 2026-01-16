@@ -1,7 +1,7 @@
 import uuid
 from typing import List
 
-from common.exceptions import ConflictError, NotFoundError, ValidationError, AppException
+from common.exceptions import AppException, ConflictError, NotFoundError
 from sqlalchemy.orm import Session
 
 from ..infrastructure.models import OutboxORM, PriceORM
@@ -94,11 +94,11 @@ class PricingService:
 
     def lock_price(self, price_id: uuid.UUID, saga_id: uuid.UUID) -> PriceORM:
         price_orm = self.get_price(price_id)
-        
+
         # If already locked by the same saga, just return
         if price_orm.locked and price_orm.locked_by_saga_id == saga_id:
             return price_orm
-            
+
         if price_orm.locked:
             raise AppException(
                 code="LOCKED",
@@ -107,29 +107,29 @@ class PricingService:
 
         price_orm.locked = True
         price_orm.locked_by_saga_id = saga_id
-        
+
         self.db.flush()
-        
+
         event = PriceLocked(payload={"id": str(price_id), "locked_by_saga_id": str(saga_id)})
         self._add_to_outbox("commercial.pricing.events", event)
-        
+
         self.db.commit()
         return price_orm
 
     def unlock_price(self, price_id: uuid.UUID) -> PriceORM:
         price_orm = self.get_price(price_id)
-        
+
         if not price_orm.locked:
             return price_orm
 
         saga_id = price_orm.locked_by_saga_id
         price_orm.locked = False
         price_orm.locked_by_saga_id = None
-        
+
         self.db.flush()
-        
+
         event = PriceUnlocked(payload={"id": str(price_id), "previously_locked_by": str(saga_id)})
         self._add_to_outbox("commercial.pricing.events", event)
-        
+
         self.db.commit()
         return price_orm

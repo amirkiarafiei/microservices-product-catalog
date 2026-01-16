@@ -51,10 +51,12 @@ async def lifespan(app: FastAPI):
     # Shutdown tasks
     if outbox_task:
         outbox_task.cancel()
-        try:
+
+    try:
+        if outbox_task:
             await outbox_task
-        except asyncio.CancelledError:
-            pass
+    except asyncio.CancelledError:
+        pass
     logger.info("Shutdown complete")
 
 
@@ -180,6 +182,26 @@ async def publish_offering(offering_id: uuid.UUID, db: Session = Depends(get_db)
 def retire_offering(offering_id: uuid.UUID, db: Session = Depends(get_db)):
     service = OfferingService(db)
     return service.retire_offering(offering_id)
+
+
+@app.post(
+    "/api/v1/offerings/{offering_id}/confirm",
+    response_model=OfferingRead,
+    dependencies=[Depends(admin_required)],
+)
+def confirm_offering(offering_id: uuid.UUID, db: Session = Depends(get_db)):
+    service = OfferingService(db)
+    return service.confirm_publication(offering_id)
+
+
+@app.post(
+    "/api/v1/offerings/{offering_id}/fail",
+    response_model=OfferingRead,
+    dependencies=[Depends(admin_required)],
+)
+def fail_offering(offering_id: uuid.UUID, db: Session = Depends(get_db)):
+    service = OfferingService(db)
+    return service.fail_publication(offering_id)
 
 
 if __name__ == "__main__":

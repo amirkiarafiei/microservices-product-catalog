@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.16.0">
+  <bpmn:process id="offering-publication-saga" name="Offering Publication Saga" isExecutable="true" camunda:historyTimeToLive="P30D">
+    <bpmn:startEvent id="StartEvent_1" name="Publication Requested">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="StartEvent_1" targetRef="Activity_LockPrices" />
+    <bpmn:serviceTask id="Activity_LockPrices" name="Lock Prices" camunda:type="external" camunda:topic="lock-prices">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Activity_LockPrices" targetRef="Activity_ValidateSpecs" />
+    <bpmn:serviceTask id="Activity_ValidateSpecs" name="Validate Specifications" camunda:type="external" camunda:topic="validate-specifications">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Activity_ValidateSpecs" targetRef="Activity_CreateStoreEntry" />
+    <bpmn:serviceTask id="Activity_CreateStoreEntry" name="Create Store Entry" camunda:type="external" camunda:topic="create-store-entry">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Activity_CreateStoreEntry" targetRef="Activity_ConfirmPublication" />
+    <bpmn:serviceTask id="Activity_ConfirmPublication" name="Confirm Publication" camunda:type="external" camunda:topic="confirm-publication">
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndEvent_1" name="Publication Successful">
+      <bpmn:incoming>Flow_5</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="Activity_ConfirmPublication" targetRef="EndEvent_1" />
+    
+    <!-- Boundary Events for Compensation -->
+    <bpmn:boundaryEvent id="Event_LockPricesError" attachedToRef="Activity_LockPrices">
+      <bpmn:outgoing>Flow_Error1</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_1" />
+    </bpmn:boundaryEvent>
+    <bpmn:boundaryEvent id="Event_ValidateSpecsError" attachedToRef="Activity_ValidateSpecs">
+      <bpmn:outgoing>Flow_Error2</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_2" />
+    </bpmn:boundaryEvent>
+    <bpmn:boundaryEvent id="Event_CreateStoreEntryError" attachedToRef="Activity_CreateStoreEntry">
+      <bpmn:outgoing>Flow_Error3</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_3" />
+    </bpmn:boundaryEvent>
+    <bpmn:boundaryEvent id="Event_ConfirmPublicationError" attachedToRef="Activity_ConfirmPublication">
+      <bpmn:outgoing>Flow_Error4</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_4" />
+    </bpmn:boundaryEvent>
+
+    <!-- Error Flows to Compensation -->
+    <bpmn:sequenceFlow id="Flow_Error1" sourceRef="Event_LockPricesError" targetRef="Activity_RevertToDraft" />
+    <bpmn:sequenceFlow id="Flow_Error2" sourceRef="Event_ValidateSpecsError" targetRef="Activity_UnlockPrices" />
+    <bpmn:sequenceFlow id="Flow_Error3" sourceRef="Event_CreateStoreEntryError" targetRef="Activity_UnlockPrices" />
+    <bpmn:sequenceFlow id="Flow_Error4" sourceRef="Event_ConfirmPublicationError" targetRef="Activity_DeleteStoreEntry" />
+
+    <!-- Compensation Tasks -->
+    <bpmn:serviceTask id="Activity_DeleteStoreEntry" name="Delete Store Entry" camunda:type="external" camunda:topic="delete-store-entry">
+      <bpmn:incoming>Flow_Error4</bpmn:incoming>
+      <bpmn:outgoing>Flow_Comp1</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_Comp1" sourceRef="Activity_DeleteStoreEntry" targetRef="Activity_UnlockPrices" />
+    
+    <bpmn:serviceTask id="Activity_UnlockPrices" name="Unlock Prices" camunda:type="external" camunda:topic="unlock-prices">
+      <bpmn:incoming>Flow_Error2</bpmn:incoming>
+      <bpmn:incoming>Flow_Error3</bpmn:incoming>
+      <bpmn:incoming>Flow_Comp1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Comp2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_Comp2" sourceRef="Activity_UnlockPrices" targetRef="Activity_RevertToDraft" />
+
+    <bpmn:serviceTask id="Activity_RevertToDraft" name="Revert Offering to Draft" camunda:type="external" camunda:topic="revert-offering-to-draft">
+      <bpmn:incoming>Flow_Error1</bpmn:incoming>
+      <bpmn:incoming>Flow_Comp2</bpmn:incoming>
+      <bpmn:outgoing>Flow_EndError</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndEvent_Error" name="Publication Failed">
+      <bpmn:incoming>Flow_EndError</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_EndError" sourceRef="Activity_RevertToDraft" targetRef="EndEvent_Error" />
+
+  </bpmn:process>
+</bpmn:definitions>

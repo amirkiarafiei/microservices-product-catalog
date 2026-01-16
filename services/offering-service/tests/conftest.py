@@ -51,9 +51,13 @@ def db_session():
     transaction = connection.begin()
     session = db_module.SessionLocal(bind=connection)
 
-    # Ensure settings use test DB
-    settings.DATABASE_URL = TEST_DATABASE_URL
-    main_module.settings.DATABASE_URL = TEST_DATABASE_URL
+    # IMPORTANT:
+    # Do NOT set settings.DATABASE_URL here.
+    # The FastAPI lifespan uses settings.DATABASE_URL to decide whether to start the OutboxListener.
+    # Starting the OutboxListener in tests spins up background threadpool work and can block pytest
+    # shutdown (appears as "hanging" tests) when RabbitMQ isn't available.
+    settings.DATABASE_URL = None
+    main_module.settings.DATABASE_URL = None
 
     try:
         yield session

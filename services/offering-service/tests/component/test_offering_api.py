@@ -55,19 +55,35 @@ def test_publish_offering_flow(client: TestClient):
     }
     # Skip external validation for simplicity in this test by using a service that doesn't check
     # or just patch it
-    with patch("offering.application.service.OfferingService._validate_external_ids", new_callable=AsyncMock):
+    with (
+        patch("offering.application.service.OfferingService._validate_external_ids", new_callable=AsyncMock),
+        patch("offering.application.service.httpx.AsyncClient.post", new_callable=AsyncMock) as mock_camunda_post,
+    ):
+        mock_camunda_post.return_value = AsyncMock(status_code=200)
         resp = client.post("/api/v1/offerings", json=offering_data)
         offering_id = resp.json()["id"]
 
         # 2. Publish
         publish_resp = client.post(f"/api/v1/offerings/{offering_id}/publish")
         assert publish_resp.status_code == 200
-        published = publish_resp.json()
-        assert published["lifecycle_status"] == "PUBLISHED"
+        publishing = publish_resp.json()
+        # Phase 12: publish starts the saga, leaving the offering in PUBLISHING until confirmed
+        assert publishing["lifecycle_status"] == "PUBLISHING"
+
+        # 3. Confirm (simulating Camunda worker)
+        confirm_resp = client.post(f"/api/v1/offerings/{offering_id}/confirm")
+        assert confirm_resp.status_code == 200
+        confirmed = confirm_resp.json()
+        assert confirmed["lifecycle_status"] == "PUBLISHED"
+        assert confirmed["published_at"] is not None
 
 
 def test_update_restricted_to_draft(client: TestClient):
-    with patch("offering.application.service.OfferingService._validate_external_ids", new_callable=AsyncMock):
+    with (
+        patch("offering.application.service.OfferingService._validate_external_ids", new_callable=AsyncMock),
+        patch("offering.application.service.httpx.AsyncClient.post", new_callable=AsyncMock) as mock_camunda_post,
+    ):
+        mock_camunda_post.return_value = AsyncMock(status_code=200)
         # Create and publish
         offering_data = {
             "name": "Locked Offering",
@@ -78,6 +94,7 @@ def test_update_restricted_to_draft(client: TestClient):
         resp = client.post("/api/v1/offerings", json=offering_data)
         offering_id = resp.json()["id"]
         client.post(f"/api/v1/offerings/{offering_id}/publish")
+        client.post(f"/api/v1/offerings/{offering_id}/confirm")
 
         # Try to update
         update_data = {"name": "New Name", "specification_ids": [], "pricing_ids": [], "sales_channels": []}

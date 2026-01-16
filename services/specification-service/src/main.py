@@ -178,6 +178,17 @@ def delete_specification(
     service.delete_specification(spec_id)
     return None
 
+@app.post("/api/v1/specifications/validate",
+          status_code=status.HTTP_204_NO_CONTENT,
+          dependencies=[Depends(admin_required)])
+def validate_specifications(
+    spec_ids: List[uuid.UUID],
+    db: Session = Depends(get_db)
+):
+    service = SpecificationService(db)
+    service.validate_specifications(spec_ids)
+    return None
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8003)

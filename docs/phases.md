@@ -368,6 +368,15 @@ Here is your **Incremental Roadmap**.
     *   Check Prices are "Locked".
     *   Check Offering state becomes "PUBLISHED".
     *   Force a task failure → Verify compensation runs, offering reverts to DRAFT.
+*   **Tests:**
+    *   **Integration:** Mock Camunda start call and downstream validations; verify `/publish` transitions to `PUBLISHING` and persists.
+    *   **Component:** Verify `/confirm` transitions `PUBLISHING → PUBLISHED`, `/fail` transitions `PUBLISHING → DRAFT`, and update is blocked outside `DRAFT`.
+    *   **Regression:** Run full Offering Service test suite to ensure existing CRUD/outbox behavior remains intact.
+*   **Status Update (Jan 16, 2026):**
+    *   **BPMN Added:** `docs/camunda/offering_publication_saga.bpmn` created for Camunda deployment.
+    *   **Saga Entry:** Offering `/publish` now starts Camunda and leaves state as `PUBLISHING` until confirmation.
+    *   **Workers Implemented (Code):** Worker handlers added per service (not auto-started inside API process to keep services testable and avoid blocking threads).
+    *   **Verified:** Saga-focused integration/component tests added and passing; full Offering Service tests passing.
 
 ### Phase 13: Observability & Tracing
 

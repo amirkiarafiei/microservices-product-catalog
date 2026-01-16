@@ -9,7 +9,11 @@ class SpecificationSettings(BaseServiceSettings):
     """
     SERVICE_NAME: str = "specification-service"
     # The public key used for JWT verification.
-    # In production, this would be fetched from Identity Service or shared via a secret.
     JWT_PUBLIC_KEY: Optional[str] = None
+
+    # Camunda Settings
+    CAMUNDA_URL: str = "http://camunda:8080/engine-rest"
+    SPECIFICATION_SERVICE_URL: str = "http://specification-service:8003"
+
 
 settings = SpecificationSettings()

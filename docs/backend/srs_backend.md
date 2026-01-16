@@ -419,7 +419,7 @@ Each service must implement an External Task Worker that:
 - Outbox table for transactional event publishing
 - RabbitMQ topic (Publish): `product.offering.events`
 - Synchronous HTTP calls to Specification Service and Pricing Service for ID validation before publication.
-- Future: Camunda BPMN orchestration for the publication saga.
+- Camunda BPMN orchestration for the publication saga (Distributed Transactions).
 
 **Error Scenarios:**
 - Invalid specification/pricing ID → 400 Bad Request

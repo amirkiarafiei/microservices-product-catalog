@@ -23,7 +23,11 @@ class StoreSettings(BaseServiceSettings):
     PRICING_SERVICE_URL: str = "http://pricing-service:8004"
     OFFERING_SERVICE_URL: str = "http://offering-service:8005"
 
+    # Camunda Settings
+    CAMUNDA_URL: str = "http://camunda:8080/engine-rest"
+
     # JWT Public Key for verification
     JWT_PUBLIC_KEY: Optional[str] = None
+
 
 settings = StoreSettings()

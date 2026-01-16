@@ -1,10 +1,8 @@
-import asyncio
 import uuid
 from decimal import Decimal
 
 import pytest
 from sqlalchemy.orm import Session
-
 from src.application.schemas import PriceCreate
 from src.application.service import PricingService
 from src.domain.models import CurrencyEnum
@@ -37,6 +35,6 @@ async def test_outbox_flow_e2e(db_session: Session):
     assert outbox_entry is not None
     assert outbox_entry.payload["payload"]["id"] == str(created_price.id)
     assert outbox_entry.status == "PENDING"
-    
+
     # Note: In a real environment, the lifespan listener would pick this up.
     # We've already tested the listener itself in characteristic-service.

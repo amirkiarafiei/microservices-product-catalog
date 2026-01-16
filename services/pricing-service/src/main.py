@@ -50,10 +50,12 @@ async def lifespan(app: FastAPI):
     # Shutdown tasks
     if outbox_task:
         outbox_task.cancel()
-        try:
+
+    try:
+        if outbox_task:
             await outbox_task
-        except asyncio.CancelledError:
-            pass
+    except asyncio.CancelledError:
+        pass
     logger.info("Shutdown complete")
 
 
@@ -161,6 +163,7 @@ def update_price(
 )
 def delete_price(price_id: uuid.UUID, db: Session = Depends(get_db)):
     service = PricingService(db)
+    # No changes needed here, service.delete_price handles lock check
     service.delete_price(price_id)
     return None
 

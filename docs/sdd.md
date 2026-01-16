@@ -400,8 +400,8 @@ The system is composed of 6 autonomous services:
 | **Identity Service** | Utility | **Authentication.** Issues and validates JWTs (RS256). Implements Zero Trust security with locally generated RSA key pairs. | ✅ Implemented |
 | **Characteristic Service** | Write | **Resource Context.** Manages atomic attributes (e.g., "Internet Speed", "Color"). Uses Outbox Pattern. | ✅ Implemented (CRUD + Events) |
 | **Specification Service** | Write | **Resource Context.** Groups characteristics into technical specs. Validates dependencies synchronously. | ✅ Implemented (CRUD + Sync) |
-| **Pricing Service** | Write | **Commercial Context.** Manages monetary definitions. Supports "Locking" during active Sagas. | ✅ Implemented |
-| **Offering Service** | Write | **Product Context (Aggregate Root).** Bundles Specs + Prices. **Saga Orchestrator** for publication lifecycle. | ✅ Implemented (Lifecycle + Validation) |
+| **Pricing Service** | Write | **Commercial Context.** Manages monetary definitions. Supports "Locking" during active Sagas. | ✅ Implemented (CRUD + Locking) |
+| **Offering Service** | Write | **Product Context (Aggregate Root).** Bundles Specs + Prices. **Saga Orchestrator** for publication lifecycle. | ✅ Implemented (Saga Orchestration) |
 | **Store Query Service** | Read | **Sales Context (CQRS View).** Consumes events to build a read-optimized, searchable catalog (Elasticsearch/Mongo). | ✅ Implemented (CQRS + Search) |
 
 ---
@@ -427,6 +427,10 @@ The system is composed of 6 autonomous services:
     *   **Database Migrations:** Managed per-service via **Alembic**. A centralized migration engine in the shared chassis ensures schema consistency, while a root-level migration tool allows system-wide updates.
     *   **Transactional Outbox:** No dual-write issues. Database updates and Event publishing happen atomically using Postgres `LISTEN/NOTIFY`.
     *   **Saga Pattern:** Orchestration via **Camunda**. If an offering fails validation during publishing, all changes (e.g., Price locks) are rolled back.
+
+3.  **Implementation Note (Resilience & Testability):**
+    *   **Worker Isolation:** Camunda External Task Workers are implemented as separate modules (`saga_worker.py`) rather than being embedded in the FastAPI application lifespan. This prevents infinite polling loops from blocking the main event loop and ensures clean process termination during testing.
+    *   **Test-Induced Deadlocks:** During development, embedded workers caused `pytest` to hang indefinitely because non-daemon worker threads remained active after tests finished. The fix involved decoupling workers from the API startup and neutralizing background listeners (like Outbox) during test execution.
 
 2.  **Resilience:**
     *   **Circuit Breaker:** The API Gateway stops traffic to failing services to prevent cascading outages.

@@ -3,8 +3,7 @@ from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
-from common.exceptions import ConflictError, NotFoundError, AppException
-
+from common.exceptions import AppException, ConflictError
 from src.application.schemas import PriceCreate, PriceUpdate
 from src.application.service import PricingService
 from src.domain.models import CurrencyEnum
@@ -36,7 +35,7 @@ def test_create_price_success(service, mock_db_session):
 
 def test_create_price_duplicate_name(service, mock_db_session):
     price_in = PriceCreate(name="Duplicate", value=Decimal("10.00"), unit="once", currency=CurrencyEnum.EUR)
-    
+
     # Mock existing price
     mock_db_session.query.return_value.filter.return_value.first.return_value = MagicMock()
 

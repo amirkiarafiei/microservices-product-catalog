@@ -1,12 +1,11 @@
 import uuid
 from datetime import datetime, timezone
-from decimal import Decimal
 
 from common.database.outbox import OutboxMixin
 from sqlalchemy import Boolean, Column, DateTime, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID
 
-from ..domain.models import Price, CurrencyEnum
+from ..domain.models import CurrencyEnum, Price
 from .database import Base
 
 
