@@ -81,35 +81,35 @@ class RabbitMQConsumer:
         if not self.connection or self.connection.is_closed:
             self.connection = await aio_pika.connect_robust(self.amqp_url)
             self.channel = await self.connection.channel()
-            
+
             # Declare exchange
             exchange = await self.channel.declare_exchange(
                 self.exchange_name, aio_pika.ExchangeType.TOPIC, durable=True
             )
-            
+
             # Declare queue
             queue = await self.channel.declare_queue(self.queue_name, durable=True)
-            
+
             # Bind queue to exchange
             await queue.bind(exchange, routing_key=self.routing_key)
-            
+
             logger.info(f"Consumer connected and bound to {self.routing_key}")
             return queue
 
     async def consume(self, callback):
         """
-        Starts consuming messages. 
+        Starts consuming messages.
         'callback' should be an async function that takes (message_body, headers).
         """
         while not self.stop_event.is_set():
             try:
                 queue = await self.connect()
-                
+
                 async with queue.iterator() as queue_iter:
                     async for message in queue_iter:
                         if self.stop_event.is_set():
                             break
-                            
+
                         async with message.process():
                             try:
                                 body = json.loads(message.body.decode())
@@ -117,11 +117,11 @@ class RabbitMQConsumer:
                                 await callback(body, headers)
                             except Exception as e:
                                 logger.error(f"Error processing message: {str(e)}")
-                                # message.process() handles nack if exception is raised, 
-                                # but we caught it. If we want requeue, we should raise or 
+                                # message.process() handles nack if exception is raised,
+                                # but we caught it. If we want requeue, we should raise or
                                 # use custom ack/nack logic. For now, we log and move on
                                 # to prevent poison pills from blocking the queue.
-                
+
             except Exception as e:
                 if not self.stop_event.is_set():
                     logger.error(f"Consumer error: {str(e)}. Retrying in 5s...")

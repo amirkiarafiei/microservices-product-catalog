@@ -1,14 +1,14 @@
 """initial_migration
 
 Revision ID: 83e4be9dc43b
-Revises: 
+Revises:
 Create Date: 2026-01-16 15:13:49.964966
 
 """
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.

@@ -13,12 +13,12 @@ from fastapi import Depends, FastAPI, Query, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
+from .application.consumers import CharacteristicConsumer
+from .application.schemas import SpecificationCreate, SpecificationRead, SpecificationUpdate
+from .application.service import SpecificationService
 from .config import settings
 from .infrastructure.database import SessionLocal, get_db
 from .infrastructure.models import OutboxORM
-from .application.schemas import SpecificationCreate, SpecificationRead, SpecificationUpdate
-from .application.service import SpecificationService
-from .application.consumers import CharacteristicConsumer
 
 # Setup logging
 logger = setup_logging(settings.SERVICE_NAME, settings.LOG_LEVEL)
@@ -63,7 +63,7 @@ async def lifespan(app: FastAPI):
         outbox_task.cancel()
     if consumer_task:
         consumer_task.cancel()
-    
+
     try:
         if outbox_task:
             await outbox_task
@@ -71,7 +71,7 @@ async def lifespan(app: FastAPI):
             await consumer_task
     except asyncio.CancelledError:
         pass
-        
+
     logger.info("Shutdown complete")
 
 app = FastAPI(

@@ -1,5 +1,5 @@
-import pytest
 import uuid
+
 
 def test_create_and_get_specification(client, db_session):
     # 1. Setup cache
@@ -8,7 +8,7 @@ def test_create_and_get_specification(client, db_session):
     from src.infrastructure.models import CachedCharacteristicORM
     db_session.add(CachedCharacteristicORM(id=char_id, name="Test Char"))
     db_session.commit()
-    
+
     # 2. Create Spec
     spec_data = {
         "name": "Component Test Spec",
@@ -18,7 +18,7 @@ def test_create_and_get_specification(client, db_session):
     assert response.status_code == 201
     created = response.json()
     assert created["name"] == "Component Test Spec"
-    
+
     # 3. Get Spec
     spec_id = created["id"]
     response = client.get(f"/api/v1/specifications/{spec_id}")

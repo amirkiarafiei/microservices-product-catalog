@@ -1,5 +1,5 @@
-import logging
 import asyncio
+import logging
 from typing import Any, Dict
 
 from common.messaging import RabbitMQConsumer
@@ -29,9 +29,9 @@ class CharacteristicConsumer:
         """Callback for handling incoming events."""
         event_type = body.get("event_type")
         payload = body.get("payload", {})
-        
+
         logger.info(f"Received event {event_type} for characteristic {payload.get('id')}")
-        
+
         # We use a synchronous session in a thread pool to avoid blocking the async consumer
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self._process_event_sync, event_type, payload)
@@ -53,7 +53,7 @@ class CharacteristicConsumer:
                 existing = db.query(CachedCharacteristicORM).filter(
                     CachedCharacteristicORM.id == char_id
                 ).first()
-                
+
                 if existing:
                     existing.name = payload.get("name")
                 else:
@@ -61,12 +61,12 @@ class CharacteristicConsumer:
                         id=char_id,
                         name=payload.get("name")
                     ))
-                
+
             elif event_type == "CharacteristicDeleted":
                 db.query(CachedCharacteristicORM).filter(
                     CachedCharacteristicORM.id == char_id
                 ).delete()
-            
+
             else:
                 logger.warning(f"Unknown event type: {event_type}")
                 return

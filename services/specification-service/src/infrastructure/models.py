@@ -1,9 +1,12 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, DateTime, JSON
-from sqlalchemy.dialects.postgresql import UUID, ARRAY
-from .database import Base
+
 from common.database.outbox import OutboxMixin
+from sqlalchemy import Column, DateTime, String
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
+
+from .database import Base
+
 
 class SpecificationORM(Base):
     __tablename__ = "specifications"

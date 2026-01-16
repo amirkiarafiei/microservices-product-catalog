@@ -1,7 +1,10 @@
 import uuid
 from typing import List, Optional
+
 from sqlalchemy.orm import Session
+
 from ..infrastructure.models import SpecificationORM
+
 
 class SpecificationRepository:
     def __init__(self, db: Session):

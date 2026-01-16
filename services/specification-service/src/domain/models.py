@@ -1,7 +1,6 @@
 import uuid
-import uuid
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import List
 
 from pydantic import BaseModel, ConfigDict, Field
 

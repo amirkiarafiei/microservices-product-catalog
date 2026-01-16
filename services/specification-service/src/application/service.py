@@ -1,11 +1,14 @@
 import uuid
-from typing import List, Optional
-from sqlalchemy.orm import Session
+from typing import List
+
 from common.exceptions import AppException
-from ..infrastructure.models import SpecificationORM, CachedCharacteristicORM, OutboxORM
+from sqlalchemy.orm import Session
+
+from ..infrastructure.models import CachedCharacteristicORM, OutboxORM, SpecificationORM
 from ..infrastructure.repository import SpecificationRepository
+from .events import SpecificationCreated, SpecificationDeleted, SpecificationUpdated
 from .schemas import SpecificationCreate, SpecificationUpdate
-from .events import SpecificationCreated, SpecificationUpdated, SpecificationDeleted
+
 
 class SpecificationService:
     def __init__(self, db: Session):
@@ -23,7 +26,7 @@ class SpecificationService:
         existing = self.db.query(CachedCharacteristicORM.id).filter(
             CachedCharacteristicORM.id.in_(characteristic_ids)
         ).all()
-        
+
         existing_ids = {row.id for row in existing}
         missing_ids = [str(cid) for cid in characteristic_ids if cid not in existing_ids]
 
@@ -53,14 +56,14 @@ class SpecificationService:
             name=spec_in.name,
             characteristic_ids=spec_in.characteristic_ids
         )
-        
+
         self.repository.create(spec_orm)
         self.db.flush() # Get ID
 
         # Write to outbox
         event = SpecificationCreated(payload=spec_orm.to_domain().model_dump(mode='json'))
         self._add_to_outbox("resource.specifications.events", event)
-        
+
         self.db.commit()
         return spec_orm
 
@@ -86,26 +89,26 @@ class SpecificationService:
 
         spec_orm.name = spec_in.name
         spec_orm.characteristic_ids = spec_in.characteristic_ids
-        
+
         self.db.flush()
 
         # Write to outbox
         event = SpecificationUpdated(payload=spec_orm.to_domain().model_dump(mode='json'))
         self._add_to_outbox("resource.specifications.events", event)
-        
+
         self.db.commit()
         return spec_orm
 
     def delete_specification(self, spec_id: uuid.UUID):
         spec_orm = self.get_specification(spec_id)
-        
+
         # In a real system, we'd check if any Offerings use this Spec here.
         # For now, we just delete.
-        
+
         self.repository.delete(spec_orm)
-        
+
         # Write to outbox
         event = SpecificationDeleted(payload={"id": str(spec_id)})
         self._add_to_outbox("resource.specifications.events", event)
-        
+
         self.db.commit()
