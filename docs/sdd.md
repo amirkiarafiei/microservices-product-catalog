@@ -182,7 +182,7 @@ graph TB
     %% ===== API GATEWAY =====
     subgraph GatewayLayer["API Gateway Layer"]
         Gateway[API Gateway<br/>:8000]
-        CircuitBreaker[Circuit Breaker<br/>Failure Threshold: 5]
+        CircuitBreaker[Circuit Breaker<br/>Failure Threshold: 3]
         RateLimiter[Rate Limiter]
         CORSHandler[CORS Handler]
     end

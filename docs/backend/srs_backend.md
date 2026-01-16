@@ -627,14 +627,14 @@ Each service must implement an External Task Worker that:
 ```
 
 **Circuit Breaker Configuration:**
-- Failure threshold: 5 consecutive failures
-- Open circuit duration: 30 seconds
+- Failure threshold: 3 consecutive failures
+- Open circuit duration: 20 seconds
 - Half-open test requests: 3
 - Apply per downstream service
 
 **Timeout Policy:**
-- Read timeout: 10 seconds
-- Connection timeout: 5 seconds
+- Read timeout: 4 seconds
+- Connection timeout: 2 seconds
 
 **Error Handling:**
 - 503 Service Unavailable if downstream unreachable
@@ -947,8 +947,8 @@ Delete Policy:**
 #### 4.6.1 Circuit Breaker (API Gateway)
 - Implemented using pybreaker library
 - Configuration per downstream service
-- Failure threshold: 5 failures in 10 seconds
-- Open duration: 30 seconds
+- Failure threshold: 3 failures
+- Open duration: 20 seconds
 - Half-open: Send test request, close if successful
 
 **Fallback Behavior:**
@@ -963,8 +963,8 @@ Delete Policy:**
 - Include jitter to prevent thundering herd
 
 #### 4.6.3 Timeouts
-- Connection timeout: 5 seconds
-- Read timeout: 10 seconds
+- Connection timeout: 2 seconds
+- Read timeout: 4 seconds
 - Database query timeout: 5 seconds
 - Message publishing timeout: 3 seconds
 

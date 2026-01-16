@@ -313,12 +313,12 @@ Here is your **Incremental Roadmap**.
     *   `/api/v1/offerings/*` → Offering Service
     *   `/api/v1/store/*` → Store Query Service
 *   Implement **Circuit Breakers** (pybreaker) for ALL downstream services:
-    *   Failure threshold: 5 consecutive failures
-    *   Open circuit duration: 30 seconds
+    *   Failure threshold: 3 consecutive failures
+    *   Open circuit duration: 20 seconds
     *   Half-open test requests: 3
 *   Implement **Timeouts**:
-    *   Connection timeout: 5 seconds
-    *   Read timeout: 10 seconds
+    *   Connection timeout: 2 seconds
+    *   Read timeout: 4 seconds
 *   Implement **CORS Handler** for frontend.
 *   Implement **Correlation ID** management:
     *   Generate `X-Correlation-ID` if not present.
