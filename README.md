@@ -1,69 +1,98 @@
 # TMF Product Catalog Microservices System
 
-A cloud-native, event-driven microservices platform for managing telecommunications product catalogs.
+A cloud-native, event-driven microservices platform for managing telecommunications product catalogs. This project demonstrates high-scale architectural patterns including **Distributed Sagas**, **CQRS**, and **Transactional Outbox**.
+
+---
+
+## 🏗 Core Architecture Patterns
+
+- **Hexagonal Architecture:** Domain logic is strictly isolated from infrastructure.
+- **Orchestrated Saga:** Publication lifecycle managed by **Camunda BPMN** with automatic compensating transactions.
+- **CQRS:** Separate write models (PostgreSQL) and read models (MongoDB + Elasticsearch).
+- **Transactional Outbox:** Guaranteed event delivery using Postgres `LISTEN/NOTIFY`.
+- **Zero-Trust Security:** Every service boundary validates JWTs signed with **RS256**.
+- **Full Observability:** Distributed tracing with **OpenTelemetry** and centralized logging with **ELK**.
+
+---
+
+## 📂 Microservices Map
+
+| Service | Responsibility | Write DB | Read/Search |
+| :--- | :--- | :--- | :--- |
+| **API Gateway** | Entry point, Circuit Breakers, Correlation IDs | - | - |
+| **Identity** | Authentication & RSA Key Distribution | PostgreSQL | - |
+| **Characteristic**| Atomic attributes (Speed, Color, etc.) | PostgreSQL | - |
+| **Specification** | Technical groupings of characteristics | PostgreSQL | - |
+| **Pricing** | Monetary definitions & Saga Locking | PostgreSQL | - |
+| **Offering** | Product bundles & Saga Orchestrator | PostgreSQL | - |
+| **Store Query** | High-performance catalog & Full-text search | - | Mongo + ES |
+
+---
 
 ## 🚀 Quick Start
 
 ### 1. Prerequisites
-- Docker & Docker Compose
-- Python 3.12+
-- `uv` package manager
+- **Docker & Docker Compose**
+- **Python 3.12+**
+- **[uv](https://docs.astral.sh/uv/)** package manager
 
 ### 2. Infrastructure Setup
-Start the shared infrastructure (PostgreSQL, RabbitMQ, MongoDB, etc.):
+Spin up the complete stack (Databases, Broker, Workflow, Tracing, ELK):
 ```bash
 docker compose up -d
 ```
 
 ### 3. Security Setup (RSA Keys)
-This project uses **RS256** JWT signing. You must generate your own RSA keys locally before running the services.
-
-Run the generation script:
+Generate the keys used for zero-trust JWT signing:
 ```bash
 ./scripts/generate_keys.sh
 ```
-The script will generate `private_key.pem` and `public_key.pem` in the `identity-service` folder and provide you with the formatted strings to copy into your `services/identity-service/.env` file.
+*Follow the script instructions to update `services/identity-service/.env`.*
 
 ### 4. Database Migrations
-We use a centralized migration tool to manage schemas across all microservices.
-
-**Apply all migrations:**
+Apply schemas to all PostgreSQL write databases:
 ```bash
 python scripts/migrate.py upgrade head
 ```
 
-**View migration history for a specific service:**
-```bash
-python scripts/migrate.py --service identity-service history
-```
-
-**Create a new migration (Autogenerate):**
-```bash
-python scripts/migrate.py --service <service-name> revision --autogenerate -m "description"
-```
-
 ### 5. Running the Services
-**Identity Service:**
+You can run services locally for debugging:
 ```bash
-cd services/identity-service
-uv run uvicorn src.main:app --reload --port 8001
+# Example: Offering Service
+cd services/offering-service
+uv run uvicorn offering.main:app --reload --port 8005
 ```
 
-**Characteristic Service:**
+---
+
+## 🕵️ Observability & Monitoring
+
+The system is a "Glass Box" – you can see everything happening inside:
+
+- **Zipkin (Tracing):** Visit [http://localhost:9411](http://localhost:9411) to see waterfall charts of every request hop.
+- **Kibana (Logs):** Visit [http://localhost:5601](http://localhost:5601) to search logs by `correlation_id` across all services.
+- **Camunda Cockpit:** Visit [http://localhost:8085](http://localhost:8085) to watch the Offering Publication Saga in real-time.
+
+---
+
+## 🧪 Testing
+
+We maintain a high-quality bar with **98+ tests** across the suite:
+
 ```bash
-cd services/characteristic-service
-uv run uvicorn src.main:app --reload --port 8002
+# Run tests for a specific service
+cd services/pricing-service && uv run pytest tests -v
+
+# Run shared library tests
+cd libs/common-python && uv run pytest tests -v
 ```
 
-## 🏗 Architecture
-- **Hexagonal Architecture**
-- **Saga Pattern** (via Camunda)
-- **CQRS** (Read side via MongoDB/Elasticsearch)
-- **Transactional Outbox** (Postgres LISTEN/NOTIFY)
+---
 
-## 📂 Project Structure
-- `services/`: Individual microservices.
-- `libs/`: Shared Python chassis (logging, security, etc.).
-- `infra/`: Infrastructure configuration files.
-- `scripts/`: Utility scripts.
-- `docs/`: Technical documentation and requirements.
+## 🗺 Implementation Progress
+
+- [x] **Phase 1-10:** Core microservices and CQRS
+- [x] **Phase 11:** API Gateway & Resilience
+- [x] **Phase 12:** Distributed Transactions (Camunda Saga)
+- [x] **Phase 13:** Observability (OTel + ELK)
+- [ ] **Phase 14-18:** Frontend (NextJS Implementation) - *Coming Next*
