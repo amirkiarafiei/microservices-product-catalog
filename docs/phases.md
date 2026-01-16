@@ -330,6 +330,11 @@ Here is your **Incremental Roadmap**.
     *   Route requests correctly to all services.
     *   Stop Characteristic container → Gateway returns 503 immediately (circuit open).
     *   Restart container → Circuit closes, requests succeed.
+*   **Status Update (Jan 16, 2026):**
+    *   **API Gateway Implemented:** Unified routing for all 6 microservices.
+    *   **Resilience:** Custom `AsyncCircuitBreaker` and `httpx` timeouts implemented and verified.
+    *   **Observability:** Correlation ID tracking and process timing headers added.
+    *   **Verification:** Comprehensive component tests passed, covering routing, circuit breakers, and timeouts.
 
 ### Phase 12: Distributed Transactions (The Saga)
 

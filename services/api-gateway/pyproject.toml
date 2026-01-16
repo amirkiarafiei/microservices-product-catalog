@@ -1,0 +1,30 @@
+[project]
+name = "api-gateway"
+version = "0.1.0"
+description = "API Gateway for TMF Product Catalog Microservices"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "httpx>=0.25.0",
+    "pybreaker>=1.1.0",
+    "pydantic-settings>=2.1.0",
+    "common-python",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "respx>=0.20.2",
+]
+
+[tool.uv.sources]
+common-python = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["gateway"]
