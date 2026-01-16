@@ -1760,6 +1760,10 @@ uv run uvicorn pricing.main:app --reload --port 8004
 cd services/offering-service
 uv run uvicorn offering.main:app --reload --port 8005
 
+# For Store Service (uses internal module naming)
+cd services/store-service
+uv run uvicorn store.main:app --reload --port 8006
+
 # Run all services
 docker-compose up
 ```
