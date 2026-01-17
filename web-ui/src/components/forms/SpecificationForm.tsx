@@ -121,8 +121,9 @@ export default function SpecificationForm({ initialData, onSuccess }: Specificat
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Name</label>
+            <label htmlFor="spec-name" className="text-sm font-semibold text-slate-700">Name</label>
             <input
+              id="spec-name"
               {...register("name")}
               placeholder="e.g. Fiber High Speed Bundle"
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-orange-brand/10 focus:border-orange-brand outline-none transition-all"
@@ -133,12 +134,13 @@ export default function SpecificationForm({ initialData, onSuccess }: Specificat
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Characteristics</label>
+            <label htmlFor="spec-chars" className="text-sm font-semibold text-slate-700">Characteristics</label>
             <Controller
               name="characteristic_ids"
               control={control}
               render={({ field }) => (
                 <MultiSelect
+                  id="spec-chars"
                   options={charOptions}
                   selected={field.value}
                   onChange={field.onChange}

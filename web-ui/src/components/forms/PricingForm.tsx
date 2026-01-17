@@ -82,8 +82,9 @@ export default function PricingForm({ initialData, onSuccess }: PricingFormProps
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Name</label>
+            <label htmlFor="price-name" className="text-sm font-semibold text-slate-700">Name</label>
             <input
+              id="price-name"
               {...register("name")}
               placeholder="e.g. Monthly Fiber Basic"
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-orange-brand/10 focus:border-orange-brand outline-none transition-all"
@@ -95,9 +96,10 @@ export default function PricingForm({ initialData, onSuccess }: PricingFormProps
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700">Price Value</label>
+              <label htmlFor="price-value" className="text-sm font-semibold text-slate-700">Price Value</label>
               <div className="relative">
                 <input
+                  id="price-value"
                   {...register("value", { valueAsNumber: true })}
                   type="number"
                   step="0.01"
@@ -112,8 +114,9 @@ export default function PricingForm({ initialData, onSuccess }: PricingFormProps
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700">Currency</label>
+              <label htmlFor="price-currency" className="text-sm font-semibold text-slate-700">Currency</label>
               <select
+                id="price-currency"
                 {...register("currency")}
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-orange-brand/10 focus:border-orange-brand outline-none transition-all appearance-none"
               >
@@ -127,8 +130,9 @@ export default function PricingForm({ initialData, onSuccess }: PricingFormProps
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Unit</label>
+            <label htmlFor="price-unit" className="text-sm font-semibold text-slate-700">Unit</label>
             <input
+              id="price-unit"
               {...register("unit")}
               placeholder="e.g. per month"
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-orange-brand/10 focus:border-orange-brand outline-none transition-all"

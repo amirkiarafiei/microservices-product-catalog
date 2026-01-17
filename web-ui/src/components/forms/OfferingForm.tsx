@@ -191,8 +191,9 @@ export default function OfferingForm({ initialData, onSuccess }: OfferingFormPro
 
         <form className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Name</label>
+            <label htmlFor="offering-name" className="text-sm font-semibold text-slate-700">Name</label>
             <input
+              id="offering-name"
               {...register("name")}
               placeholder="e.g. Fiber Ultra 500"
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-orange-brand/10 focus:border-orange-brand outline-none transition-all"
@@ -203,8 +204,9 @@ export default function OfferingForm({ initialData, onSuccess }: OfferingFormPro
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700">Description</label>
+            <label htmlFor="offering-description" className="text-sm font-semibold text-slate-700">Description</label>
             <textarea
+              id="offering-description"
               {...register("description")}
               rows={3}
               placeholder="Describe the value proposition..."
@@ -214,12 +216,13 @@ export default function OfferingForm({ initialData, onSuccess }: OfferingFormPro
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700">Specifications</label>
+              <label htmlFor="offering-specs" className="text-sm font-semibold text-slate-700">Specifications</label>
               <Controller
                 name="specification_ids"
                 control={control}
                 render={({ field }) => (
                   <MultiSelect
+                    id="offering-specs"
                     options={specOptions}
                     selected={field.value}
                     onChange={field.onChange}
@@ -231,12 +234,13 @@ export default function OfferingForm({ initialData, onSuccess }: OfferingFormPro
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700">Pricing Plans</label>
+              <label htmlFor="offering-prices" className="text-sm font-semibold text-slate-700">Pricing Plans</label>
               <Controller
                 name="pricing_ids"
                 control={control}
                 render={({ field }) => (
                   <MultiSelect
+                    id="offering-prices"
                     options={priceOptions}
                     selected={field.value}
                     onChange={field.onChange}
