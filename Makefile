@@ -83,9 +83,15 @@ backend:
 	@cd services/specification-service && uv run uvicorn src.main:app --port 8003 > ../../logs/specification.log 2>&1 &
 	@cd services/pricing-service && uv run uvicorn pricing.main:app --port 8004 > ../../logs/pricing.log 2>&1 &
 	@cd services/offering-service && uv run uvicorn offering.main:app --port 8005 > ../../logs/offering.log 2>&1 &
-	@cd services/offering-service && uv run python -m offering.saga_worker > ../../logs/offering-worker.log 2>&1 &
 	@cd services/store-service && uv run uvicorn store.main:app --port 8006 > ../../logs/store.log 2>&1 &
-	@echo "Backend services are starting. Check logs/ directory for output."
+	@echo "Waiting for services to be ready before starting saga workers..."
+	@sleep 8
+	@echo "Starting saga workers..."
+	@cd services/pricing-service && uv run python -c "from pricing.saga_worker import run_pricing_worker; run_pricing_worker()" > ../../logs/pricing-worker.log 2>&1 &
+	@cd services/specification-service && uv run python -c "from src.saga_worker import run_specification_worker; run_specification_worker()" > ../../logs/specification-worker.log 2>&1 &
+	@cd services/store-service && uv run python -c "from store.saga_worker import run_store_worker; run_store_worker()" > ../../logs/store-worker.log 2>&1 &
+	@cd services/offering-service && uv run python -c "from offering.saga_worker import run_offering_worker; run_offering_worker()" > ../../logs/offering-worker.log 2>&1 &
+	@echo "Backend services and saga workers are starting. Check logs/ directory for output."
 
 frontend:
 	cd web-ui && npm run dev
@@ -98,6 +104,7 @@ clean-logs:
 stop:
 	@echo "Stopping backend services..."
 	@pkill -u $$USER -f "[u]vicorn" || true
+	@pkill -u $$USER -f "saga_worker" || true
 	@echo "Backend services stopped."
 
 status:

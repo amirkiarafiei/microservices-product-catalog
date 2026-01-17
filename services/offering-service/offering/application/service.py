@@ -139,11 +139,12 @@ class OfferingService:
         # Start Camunda Saga
         async with httpx.AsyncClient() as client:
             try:
-                # Variables to pass to the saga
+                import json
+                # Variables to pass to the saga - use Json type for arrays
                 variables = {
                     "offeringId": {"value": str(offering_id), "type": "String"},
-                    "specificationIds": {"value": [str(sid) for sid in offering_orm.specification_ids], "type": "Object", "valueInfo": {"objectTypeName": "java.util.ArrayList", "serializationDataFormat": "application/json"}},
-                    "pricingIds": {"value": [str(pid) for pid in offering_orm.pricing_ids], "type": "Object", "valueInfo": {"objectTypeName": "java.util.ArrayList", "serializationDataFormat": "application/json"}},
+                    "specificationIds": {"value": json.dumps([str(sid) for sid in offering_orm.specification_ids]), "type": "Json"},
+                    "pricingIds": {"value": json.dumps([str(pid) for pid in offering_orm.pricing_ids]), "type": "Json"},
                 }
 
                 resp = await client.post(

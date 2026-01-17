@@ -13,6 +13,8 @@ class PricingSettings(BaseServiceSettings):
     JWT_PUBLIC_KEY: Optional[str] = None
     # Identity Service URL for fetching public key
     IDENTITY_SERVICE_URL: str = "http://localhost:8001"
+    # Camunda Settings
+    CAMUNDA_URL: str = "http://localhost:8085/engine-rest"
 
 
 settings = PricingSettings()
