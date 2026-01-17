@@ -185,7 +185,7 @@ async def search_offerings(
     query = {"query": {"bool": {"must": must or [{"match_all": {}}], "filter": filter_clauses}}}
 
     results = await es_client.search_offerings(query, from_=skip, size=limit)
-    
+
     # Transform Elasticsearch response to match UI expectations
     return {
         "total": results["hits"]["total"]["value"],

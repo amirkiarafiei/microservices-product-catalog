@@ -76,6 +76,10 @@ test-all:
 	@echo "Running frontend tests..."
 	@cd web-ui && npm test
 
+test-e2e:
+	@echo "Running End-to-End tests (requires Docker)..."
+	@uv run pytest tests/e2e
+
 lint-all:
 	@echo "Running backend lint (ruff)..."
 	@uv run ruff check .

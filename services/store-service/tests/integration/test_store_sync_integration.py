@@ -62,5 +62,5 @@ async def test_search_endpoint_returns_hits(async_client):
     resp = await async_client.get("/api/v1/store/search")
     assert resp.status_code == 200
     body = resp.json()
-    assert "hits" in body
+    assert "items" in body
 

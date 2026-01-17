@@ -8,9 +8,8 @@ import asyncio
 import uuid
 from contextlib import asynccontextmanager
 from typing import List
-import asyncio
-import httpx
 
+import httpx
 from common.database.outbox import OutboxListener
 from common.exceptions import AppException
 from common.logging import setup_logging
