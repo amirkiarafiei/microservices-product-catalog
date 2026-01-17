@@ -2,14 +2,20 @@ import os
 import signal
 import socket
 import subprocess
-import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Generator, List, Optional
+from typing import Dict, Generator, List
 
 import psycopg2
 import pytest
-from common.testing.containers import start_camunda, start_elasticsearch, start_mongodb, start_postgres, start_rabbitmq, wait_for_http_ok
+from common.testing.containers import (
+    start_camunda,
+    start_elasticsearch,
+    start_mongodb,
+    start_postgres,
+    start_rabbitmq,
+    wait_for_http_ok,
+)
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 

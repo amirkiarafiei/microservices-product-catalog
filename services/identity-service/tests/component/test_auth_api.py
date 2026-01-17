@@ -8,8 +8,8 @@ from fastapi.testclient import TestClient
 
 @pytest.fixture
 def client(set_jwt_env) -> TestClient:
-    from src.main import app
     from src.database import get_db
+    from src.main import app
 
     def _override_get_db():
         yield MagicMock()
@@ -29,8 +29,8 @@ def test_public_key_endpoint(client: TestClient, jwt_keys):
 
 
 def test_login_invalid_credentials_returns_401(set_jwt_env):
-    from src.main import app
     from src.database import get_db
+    from src.main import app
 
     # Mock DB to return no user
     db = MagicMock()

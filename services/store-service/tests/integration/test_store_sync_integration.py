@@ -1,5 +1,7 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
 
 @pytest.mark.asyncio
 async def test_sync_offering_writes_mongo_and_es(async_client, mongodb_client, es_client):

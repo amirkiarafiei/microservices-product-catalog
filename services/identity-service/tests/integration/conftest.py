@@ -31,7 +31,6 @@ def infra(jwt_keys):
 def configure_db(infra):
     # Rebuild engine/session in identity database module to point at container
     import src.database as db_module  # noqa: E402
-    import src.models  # noqa: E402  (register models)
     import src.seed as seed_module  # noqa: E402
 
     db_module.engine = create_engine(infra["pg"].url)

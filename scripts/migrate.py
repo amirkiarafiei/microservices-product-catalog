@@ -85,7 +85,7 @@ def main():
 
         # For characteristic-service, it becomes characteristic_db
         db_name = service_name.replace("-service", "_db")
-        
+
         # Prepare environment with DATABASE_URL if not already set
         env = os.environ.copy()
         if "DATABASE_URL" not in env:

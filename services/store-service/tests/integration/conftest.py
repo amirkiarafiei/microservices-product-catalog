@@ -76,8 +76,8 @@ def client(infra):
 
 @pytest_asyncio.fixture(scope="function")
 async def async_client(infra):
+    from httpx import ASGITransport, AsyncClient
     from store.main import app
-    from httpx import AsyncClient, ASGITransport
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac

@@ -1,5 +1,6 @@
 import pytest
 
+
 @pytest.mark.asyncio
 async def test_retire_offering_deletes_from_mongo_and_es(async_client, mongodb_client, es_client):
     client = async_client
