@@ -85,7 +85,7 @@ def start_postgres(dbname: str = "test_db"):
     from testcontainers.postgres import PostgresContainer
 
     image = os.getenv("TESTCONTAINERS_POSTGRES_IMAGE", "postgres:15-alpine")
-    container = PostgresContainer(image=image, dbname=dbname, user="user", password="password")
+    container = PostgresContainer(image=image, dbname=dbname, username="user", password="password")
     container.start()
 
     url = container.get_connection_url()

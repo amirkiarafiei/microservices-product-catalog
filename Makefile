@@ -1,5 +1,8 @@
 # Monorepo Management Makefile
 
+# Detect Docker Host from current context (fix for Docker Desktop / non-default sockets)
+export DOCKER_HOST ?= $(shell docker context inspect --format '{{.Endpoints.docker.Host}}' 2>/dev/null || echo "unix:///var/run/docker.sock")
+
 .PHONY: help infra-up infra-down setup-keys migrate backend frontend dev stop status
 .PHONY: install-all-deps test-all lint-all
 
