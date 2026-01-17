@@ -8,7 +8,10 @@ from src.application.service import SpecificationService
 
 
 def _db_with_cached_ids(existing_ids: list[uuid.UUID]) -> MagicMock:
-    """Build a MagicMock Session returning cached characteristic IDs."""
+    """
+    Builds a MagicMock Session whose query(CachedCharacteristicORM.id).filter(...).all()
+    returns rows with .id for the provided IDs.
+    """
     db = MagicMock()
     query = db.query.return_value
     filt = query.filter.return_value
@@ -52,15 +55,7 @@ def test_create_specification_success():
     service = SpecificationService(db)
     service.repository = MagicMock()
     service.repository.get_by_name.return_value = None
-    def _create(orm):
-        import datetime
-        orm.id = uuid.uuid4()
-        now = datetime.datetime.now(datetime.timezone.utc)
-        orm.created_at = now
-        orm.updated_at = now
-        return orm
-
-    service.repository.create = MagicMock(side_effect=_create)
+    service.repository.create = MagicMock()
 
     spec_in = SpecificationCreate(name="Valid Spec", characteristic_ids=[char_id])
     spec = service.create_specification(spec_in)
