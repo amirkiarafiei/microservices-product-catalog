@@ -4,6 +4,47 @@ A cloud-native, event-driven microservices platform for managing telecommunicati
 
 ---
 
+## 🚀 Quick Start (Automated)
+
+We use a `Makefile` to simplify monorepo orchestration.
+
+### 1. Infrastructure
+Spin up the databases and middleware:
+```bash
+make infra-up
+```
+
+### 2. First-Time Setup
+Run these once to prepare security and databases:
+```bash
+make setup-keys  # Generate RSA keys
+make migrate     # Apply DB schemas
+```
+*Note: Follow script instructions to update `services/identity-service/.env` after generating keys.*
+
+### 3. Running the App
+You can start everything with a single command:
+```bash
+make dev
+```
+*   **Backend:** Starts 7 microservices in the background (logs saved to `logs/` directory).
+*   **Frontend:** Starts the Next.js dev server on [http://localhost:3000](http://localhost:3000).
+
+### 4. Management
+```bash
+make status  # Check which services are running
+make stop    # Stop all background backend services
+make clean   # Remove logs and temp files
+```
+
+### 5. Dependency Management & Testing
+```bash
+make install-all-deps  # Install all backend (uv) and frontend (npm) deps
+make test-all          # Run all tests across the monorepo
+make lint-all          # Run linters (ruff + next lint)
+```
+---
+
 ## 🏗 Core Architecture Patterns
 
 - **Hexagonal Architecture:** Domain logic is strictly isolated from infrastructure.
@@ -127,48 +168,6 @@ flowchart LR
 | **Offering** | Product bundles & Saga Orchestrator | PostgreSQL | - |
 | **Store Query** | High-performance catalog & Full-text search | - | Mongo + ES |
 | **Web UI** | Modern Management & Shopping Portal | - | Next.js 16 |
-
----
-
-## 🚀 Quick Start (Automated)
-
-We use a `Makefile` to simplify monorepo orchestration.
-
-### 1. Infrastructure
-Spin up the databases and middleware:
-```bash
-make infra-up
-```
-
-### 2. First-Time Setup
-Run these once to prepare security and databases:
-```bash
-make setup-keys  # Generate RSA keys
-make migrate     # Apply DB schemas
-```
-*Note: Follow script instructions to update `services/identity-service/.env` after generating keys.*
-
-### 3. Running the App
-You can start everything with a single command:
-```bash
-make dev
-```
-*   **Backend:** Starts 7 microservices in the background (logs saved to `logs/` directory).
-*   **Frontend:** Starts the Next.js dev server on [http://localhost:3000](http://localhost:3000).
-
-### 4. Management
-```bash
-make status  # Check which services are running
-make stop    # Stop all background backend services
-make clean   # Remove logs and temp files
-```
-
-### 5. Dependency Management & Testing
-```bash
-make install-all-deps  # Install all backend (uv) and frontend (npm) deps
-make test-all          # Run all tests across the monorepo
-make lint-all          # Run linters (ruff + next lint)
-```
 
 ---
 
