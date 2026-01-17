@@ -171,7 +171,7 @@ graph TB
     Admin((Admin))
     
     %% ===== FRONTEND LAYER =====
-    subgraph FrontendLayer["Frontend Layer (NextJS 14+)"]
+    subgraph FrontendLayer["Frontend Layer (NextJS 16+)"]
         AdminUI[Admin UI<br/>Builder & Viewer Pages]
         StoreUI[Store UI<br/>Public Catalog]
     end
@@ -403,7 +403,7 @@ The system is composed of 6 autonomous services:
 | **Pricing Service** | Write | **Commercial Context.** Manages monetary definitions. Supports "Locking" during active Sagas. | ✅ Implemented (CRUD + Locking) |
 | **Offering Service** | Write | **Product Context (Aggregate Root).** Bundles Specs + Prices. **Saga Orchestrator** for publication lifecycle. | ✅ Implemented (Saga Orchestration) |
 | **Store Query Service** | Read | **Sales Context (CQRS View).** Consumes events to build a read-optimized, searchable catalog (Elasticsearch/Mongo). | ✅ Implemented (CQRS + Search) |
-| **Web UI** | Frontend | **Management & Shopping Portal.** Modern Next.js 14 application with Builder, Viewer, and Marketplace views. | 🏗 In Progress (Phase 14) |
+| **Web UI** | Frontend | **Management & Shopping Portal.** Modern Next.js 16 application with Builder, Viewer, and Marketplace views. | 🏗 In Progress (Phase 14) |
 
 ---
 
@@ -449,7 +449,7 @@ The system is composed of 6 autonomous services:
 
 ### 6. Technology Stack
 
-*   **Frontend:** NextJS 14 (App Router), TailwindCSS.
+*   **Frontend:** NextJS 16 (App Router), TailwindCSS 4, React 19.
 *   **Backend:** Python 3.12, FastAPI, `uv` package manager.
 *   **Databases:** PostgreSQL 15 (Write), MongoDB/Elasticsearch (Read).
 *   **Messaging:** RabbitMQ (Events), Camunda 7 (Workflow).

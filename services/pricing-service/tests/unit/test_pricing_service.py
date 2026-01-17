@@ -4,7 +4,7 @@ from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
-from common.exceptions import ConflictError, AppException
+from common.exceptions import AppException, ConflictError
 from src.application.schemas import PriceCreate, PriceUpdate
 from src.application.service import PricingService
 from src.domain.models import CurrencyEnum
@@ -14,7 +14,7 @@ from src.infrastructure.models import PriceORM
 @pytest.fixture
 def mock_db_session():
     session = MagicMock()
-    # Mock repository methods through the session if needed, 
+    # Mock repository methods through the session if needed,
     # but service uses self.repository which is initialized with db
     return session
 
@@ -28,10 +28,10 @@ def service(mock_db_session):
 
 def test_create_price_success(service, mock_db_session):
     price_in = PriceCreate(name="Test Price", value=Decimal("19.99"), unit="per month", currency=CurrencyEnum.USD)
-    
+
     # Mock repo to return None (no duplicate)
     service.repository.get_by_name.return_value = None
-    
+
     # Mock the created ORM to have valid data for to_domain()
     def mock_create(orm):
         orm.id = uuid.uuid4()
@@ -39,7 +39,7 @@ def test_create_price_success(service, mock_db_session):
         orm.created_at = datetime.now(timezone.utc)
         orm.updated_at = datetime.now(timezone.utc)
         return orm
-    
+
     service.repository.create.side_effect = mock_create
 
     created_price = service.create_price(price_in)

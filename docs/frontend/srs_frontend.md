@@ -6,8 +6,8 @@
 The frontend is a modern single-page application (SPA) that provides user interface for managing product catalog entities and viewing published offerings in a customer-facing store.
 
 ### 1.2 Technology Stack
-- **Framework:** Next.js 14+ (React 18+, App Router)
-- **Styling:** Tailwind CSS 3+
+- **Framework:** Next.js 16+ (React 19+, App Router)
+- **Styling:** Tailwind CSS 4+
 - **HTTP Client:** Fetch API or Axios
 - **State Management:** React Context API or Zustand (optional)
 - **Form Handling:** React Hook Form (optional)
@@ -365,7 +365,7 @@ User Action → Form Submit
 ```
 /web-ui
 ├── src/
-│   ├── app/                      # Next.js App Router
+│   ├── app/                      # Next.js App Router (v16)
 │   │   ├── layout.tsx            # Root layout with nav/header
 │   │   ├── page.tsx              # Home redirect
 │   │   ├── login/

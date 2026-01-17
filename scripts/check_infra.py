@@ -1,6 +1,6 @@
 import socket
-import time
 import sys
+
 
 def check_port(host, port, name):
     print(f"Checking {name} on {host}:{port}...", end=" ")
@@ -33,7 +33,7 @@ def main():
     for host, port, name in infra_services:
         if not check_port(host, port, name):
             all_ok = False
-    
+
     if all_ok:
         print("\n\033[92mAll services are up and reachable!\033[0m")
         sys.exit(0)

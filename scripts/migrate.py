@@ -1,21 +1,21 @@
-import os
 import subprocess
 import sys
 from pathlib import Path
+
 
 def run_command(command, cwd):
     print(f"Executing: {' '.join(command)} in {cwd}")
     try:
         # Use shell=False for security, pass environment variables explicitly if needed
         # uv run will handle the virtualenv for us
-        result = subprocess.run(
+        subprocess.run(
             command,
             cwd=cwd,
             check=True,
             text=True,
             capture_output=False  # Show output in real-time
         )
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         print(f"\nError executing command in {cwd}")
         # e.stderr is None if capture_output=False
         sys.exit(1)
@@ -36,7 +36,7 @@ def main():
     # Parse arguments
     args = sys.argv[1:]
     target_service = None
-    
+
     if "--service" in args:
         try:
             idx = args.index("--service")
@@ -49,7 +49,7 @@ def main():
 
     project_root = Path(__file__).parent.parent
     services_dir = project_root / "services"
-    
+
     # Find all services in the services directory
     if not services_dir.exists():
         print(f"Error: Services directory not found at {services_dir}")
@@ -78,9 +78,9 @@ def main():
         print(f"\n{'='*60}")
         print(f" Service: {service_name}")
         print(f"{'='*60}")
-        
+
         cwd = services_dir / service_name
-        
+
         # Build command: uv run alembic <args>
         # We use uv run to ensure the service's specific environment is used
         command = ["uv", "run", "alembic"] + args
