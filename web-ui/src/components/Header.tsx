@@ -46,7 +46,7 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           {isAuthenticated && (
-            <nav className="hidden md:flex items-center space-x-1">
+            <nav className="hidden md:flex items-center space-x-4">
               {navItems.map((item) => (
                 <Link
                   key={item.name}

@@ -92,6 +92,11 @@ function StoreContent() {
     fetchOfferings(initialFilters, true);
   };
 
+  // Fetch offerings on mount
+  useEffect(() => {
+    fetchOfferings(initialFilters);
+  }, []);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
       {/* Page Header */}
@@ -107,7 +112,7 @@ function StoreContent() {
         </div>
         <div className="bg-slate-100 px-4 py-2 rounded-xl border border-slate-200">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-            {isLoading ? "Updating..." : `Showing ${offerings.length} of ${total} results`}
+            {isLoading ? "Updating..." : `Showing ${offerings?.length || 0} of ${total} results`}
           </span>
         </div>
       </div>
@@ -135,7 +140,7 @@ function StoreContent() {
                 Try Again
               </button>
             </div>
-          ) : offerings.length === 0 && !isLoading ? (
+          ) : (!offerings || offerings.length === 0) && !isLoading ? (
             <div className="bg-slate-50 border border-dashed border-slate-200 rounded-3xl p-20 text-center flex flex-col items-center space-y-4">
               <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-2">
                 <ShoppingBag className="w-8 h-8 text-slate-200" />
@@ -147,7 +152,7 @@ function StoreContent() {
             <div className="space-y-12">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                 <AnimatePresence mode="popLayout">
-                  {offerings.map((offering) => (
+                  {offerings?.map((offering) => (
                     <OfferingCard 
                       key={offering.id} 
                       offering={offering} 
@@ -161,7 +166,7 @@ function StoreContent() {
                 ))}
               </div>
 
-              {offerings.length < total && (
+              {(offerings?.length || 0) < total && (
                 <div className="flex justify-center pt-8 border-t border-slate-100">
                   <button
                     onClick={handleLoadMore}
