@@ -488,6 +488,17 @@ const url = `/api/v1/store/offerings?${queryString}`;
 ## 11. DEVELOPMENT WORKFLOW
 
 ### 11.1 Setup
+
+**Recommended Method (Makefile):**
+```bash
+# Start backend and frontend together
+make dev
+
+# Start frontend only
+make frontend
+```
+
+**Manual Setup:**
 ```bash
 cd web-ui
 npm install

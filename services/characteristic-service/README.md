@@ -35,5 +35,15 @@ graph TD
 - **Transactional Outbox:** Guaranteed "at-least-once" event delivery using Postgres LISTEN/NOTIFY.
 - **Service Autonomy:** Manages its own schema and background relay worker.
 
-## Deployment
-The service includes both the REST API and a background task (Outbox Listener) within the same process. It requires connection strings for PostgreSQL and RabbitMQ.
+## Local Development
+
+**Via Root Makefile:**
+```bash
+make dev
+```
+
+**Manual:**
+```bash
+cd services/characteristic-service
+uv run uvicorn src.main:app --port 8002
+```

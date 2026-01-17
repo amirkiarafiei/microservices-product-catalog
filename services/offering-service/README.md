@@ -7,7 +7,7 @@ The Offering Service is the Aggregate Root for the Product Catalog system. it ma
 - **Lifecycle Management:** Implements a state machine (DRAFT -> PUBLISHING -> PUBLISHED -> RETIRED).
 - **Cross-Service Validation:** Synchronously validates that referenced specifications and prices exist.
 - **Transactional Outbox:** Ensures atomic state changes and reliable event publishing.
-- **Saga Orchestrator (Future):** Will act as the initiator for the multi-step publication process.
+- **Saga Orchestrator:** Acts as the initiator for the multi-step publication process via Camunda.
 
 ## Architecture
 The service follows Clean Architecture principles.
@@ -22,6 +22,7 @@ graph TD
         App --> Infra[Infrastructure Layer]
         App -->|HTTP| SpecSvc[Specification Service]
         App -->|HTTP| PriceSvc[Pricing Service]
+        App -->|Start Process| Camunda[Camunda Engine]
     end
     
     Infra --> DB[(PostgreSQL<br/>offerings + outbox)]
@@ -38,6 +39,7 @@ graph TD
 - **ORM:** SQLAlchemy
 - **Migrations:** Alembic
 - **Messaging:** RabbitMQ (via `common-python`)
+- **Orchestration:** Camunda BPMN
 - **Validation:** Pydantic
 - **Security:** JWT/RBAC (via `common-python`)
 
@@ -58,7 +60,7 @@ graph TD
 - `GET /api/v1/offerings`: List offerings with pagination.
 - `PUT /api/v1/offerings/{id}`: Update draft offering (restricted to DRAFT).
 - `DELETE /api/v1/offerings/{id}`: Delete draft offering (restricted to DRAFT).
-- `POST /api/v1/offerings/{id}/publish`: Initiate publication (transitions to PUBLISHED for now).
+- `POST /api/v1/offerings/{id}/publish`: Initiate publication saga.
 - `POST /api/v1/offerings/{id}/retire`: Retire a published offering.
 
 ## Event Topics Published
@@ -69,3 +71,16 @@ graph TD
     - `OfferingPublished`
     - `OfferingPublicationFailed`
     - `OfferingRetired`
+
+## Local Development
+
+**Via Root Makefile:**
+```bash
+make dev
+```
+
+**Manual:**
+```bash
+cd services/offering-service
+uv run uvicorn offering.main:app --port 8005
+```

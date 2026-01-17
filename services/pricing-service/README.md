@@ -41,5 +41,15 @@ graph TD
 - **Saga Locking:** Provides `lock` and `unlock` primitives for distributed consistency.
 - **Clean Architecture:** Strict separation of domain logic from infrastructure.
 
-## Deployment
-This service is designed to be deployed as an autonomous unit. It requires PostgreSQL for data storage and RabbitMQ for event publishing.
+## Local Development
+
+**Via Root Makefile:**
+```bash
+make dev
+```
+
+**Manual:**
+```bash
+cd services/pricing-service
+uv run uvicorn pricing.main:app --port 8004
+```

@@ -28,5 +28,15 @@ graph TD
 - **Service Autonomy:** Provides its own public key for distributed validation.
 - **Stateless Auth:** No sessions; full state carried in the JWT.
 
-## Deployment
-This service is designed to run as a standalone container. It requires a PostgreSQL database and a set of RSA keys (generated via `scripts/generate_keys.sh`).
+## Local Development
+
+**Via Root Makefile:**
+```bash
+make dev
+```
+
+**Manual:**
+```bash
+cd services/identity-service
+uv run uvicorn src.main:app --port 8001
+```

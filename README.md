@@ -160,6 +160,14 @@ make dev
 ```bash
 make status  # Check which services are running
 make stop    # Stop all background backend services
+make clean   # Remove logs and temp files
+```
+
+### 5. Dependency Management & Testing
+```bash
+make install-all-deps  # Install all backend (uv) and frontend (npm) deps
+make test-all          # Run all tests across the monorepo
+make lint-all          # Run linters (ruff + next lint)
 ```
 
 ---

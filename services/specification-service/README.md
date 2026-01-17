@@ -39,5 +39,15 @@ graph TD
 - **Transactional Outbox:** Atomically persists business data and domain events.
 - **Clean Architecture:** Domain-driven design with decoupled layers.
 
-## Deployment
-This service runs three main tasks: the REST API, the Outbox Listener (Publisher), and the Characteristic Consumer (Subscriber). It is designed to be highly resilient to network or external service outages.
+## Local Development
+
+**Via Root Makefile:**
+```bash
+make dev
+```
+
+**Manual:**
+```bash
+cd services/specification-service
+uv run uvicorn src.main:app --port 8003
+```

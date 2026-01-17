@@ -55,3 +55,16 @@ The service reacts to the following events:
 - `OfferingPublished`: Triggers a full data composition and indexing.
 - `OfferingRetired`: Removes the offering from both stores.
 - `CharacteristicUpdated`, `SpecificationUpdated`, `PriceUpdated`: Finds all affected offerings and triggers a full re-composition for each to ensure data consistency.
+
+## Local Development
+
+**Via Root Makefile:**
+```bash
+make dev
+```
+
+**Manual:**
+```bash
+cd services/store-service
+uv run uvicorn store.main:app --port 8006
+```

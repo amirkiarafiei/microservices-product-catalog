@@ -449,8 +449,8 @@ The system is composed of 6 autonomous services:
 
 ### 6. Technology Stack
 
-*   **Frontend:** NextJS 16 (App Router), TailwindCSS 4, React 19.
-*   **Backend:** Python 3.12, FastAPI, `uv` package manager.
+*   **Frontend:** NextJS 16.1+ (App Router), TailwindCSS 4, React 19.
+*   **Backend:** Python 3.12+, FastAPI, `uv` package manager.
 *   **Databases:** PostgreSQL 15 (Write), MongoDB/Elasticsearch (Read).
 *   **Messaging:** RabbitMQ (Events), Camunda 7 (Workflow).
 *   **Infrastructure:** Docker Compose (Dev), Kubernetes (Arch-ready).

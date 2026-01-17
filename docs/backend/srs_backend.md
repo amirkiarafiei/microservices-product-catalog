@@ -1743,29 +1743,39 @@ GET /api/v1/store/offerings?query=high-speed&min_price=10&max_price=100&characte
 
 ### 11.3 Local Development
 
-**Starting Services:**
-```bash
-# Start infrastructure only
-docker-compose up -d postgres rabbitmq mongodb elasticsearch zipkin camunda
+**Recommended Method (Makefile):**
+We use a `Makefile` to orchestrate the entire development environment.
 
-# Run service locally for development
+```bash
+# 1. Start Infrastructure (Postgres, RabbitMQ, Mongo, ES, Camunda, Zipkin)
+make infra-up
+
+# 2. First-time Setup (Keys & Migrations)
+make setup-keys
+make migrate
+
+# 3. Start All Services (Backend + Frontend)
+make dev
+
+# 4. View Logs
+# Logs are streamed to the `logs/` directory.
+tail -f logs/gateway.log
+
+# 5. Stop Services
+make stop
+```
+
+**Manual Execution (Alternative):**
+
+**Starting Infrastructure:**
+```bash
+docker-compose up -d postgres rabbitmq mongodb elasticsearch zipkin camunda
+```
+
+**Running a Service Locally:**
+```bash
 cd services/characteristic-service
 uv run uvicorn src.main:app --reload --port 8002
-
-# For Pricing Service (uses internal module naming)
-cd services/pricing-service
-uv run uvicorn pricing.main:app --reload --port 8004
-
-# For Offering Service (uses internal module naming)
-cd services/offering-service
-uv run uvicorn offering.main:app --reload --port 8005
-
-# For Store Service (uses internal module naming)
-cd services/store-service
-uv run uvicorn store.main:app --reload --port 8006
-
-# Run all services
-docker-compose up
 ```
 
 **Database Migrations:**

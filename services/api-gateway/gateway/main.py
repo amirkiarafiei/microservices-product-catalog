@@ -278,55 +278,65 @@ async def proxy_identity(path: str, request: Request):
 
 
 @app.api_route(
-    "/api/v1/characteristics/{path:path}",
+    "/api/v1/characteristics{path:path}",
     methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
 )
 async def proxy_characteristic(path: str, request: Request):
+    if path and not path.startswith("/"):
+        path = f"/{path}"
     return await proxy_request(
         "characteristic",
         settings.CHARACTERISTIC_SERVICE_URL,
-        f"api/v1/characteristics/{path}",
+        f"api/v1/characteristics{path}",
         request,
     )
 
 
 @app.api_route(
-    "/api/v1/specifications/{path:path}",
+    "/api/v1/specifications{path:path}",
     methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
 )
 async def proxy_specification(path: str, request: Request):
+    if path and not path.startswith("/"):
+        path = f"/{path}"
     return await proxy_request(
         "specification",
         settings.SPECIFICATION_SERVICE_URL,
-        f"api/v1/specifications/{path}",
+        f"api/v1/specifications{path}",
         request,
     )
 
 
 @app.api_route(
-    "/api/v1/prices/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"]
+    "/api/v1/prices{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"]
 )
 async def proxy_pricing(path: str, request: Request):
+    if path and not path.startswith("/"):
+        path = f"/{path}"
     return await proxy_request(
-        "pricing", settings.PRICING_SERVICE_URL, f"api/v1/prices/{path}", request
+        "pricing", settings.PRICING_SERVICE_URL, f"api/v1/prices{path}", request
     )
 
 
 @app.api_route(
-    "/api/v1/offerings/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"]
+    "/api/v1/offerings{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"]
 )
 async def proxy_offering(path: str, request: Request):
+    if path and not path.startswith("/"):
+        path = f"/{path}"
     return await proxy_request(
-        "offering", settings.OFFERING_SERVICE_URL, f"api/v1/offerings/{path}", request
+        "offering", settings.OFFERING_SERVICE_URL, f"api/v1/offerings{path}", request
     )
 
 
 @app.api_route(
-    "/api/v1/store/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"]
+    "/api/v1/store{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"]
 )
 async def proxy_store(path: str, request: Request):
+    if path and not path.startswith("/"):
+        path = f"/{path}"
     return await proxy_request(
-        "store", settings.STORE_SERVICE_URL, f"api/v1/store/{path}", request
+        "store", settings.STORE_SERVICE_URL, f"api/v1/store{path}", request
     )
 
 

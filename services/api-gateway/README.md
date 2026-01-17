@@ -58,3 +58,16 @@ Settings are managed via Pydantic Settings in `gateway/config.py`.
 - `/api/v1/store/*` -> Store Query Service
 - `GET /health` -> Gateway health status
 - `GET /health/dependencies` -> Detailed status of all downstream services and circuit breakers
+
+## Local Development
+
+**Via Root Makefile:**
+```bash
+make dev
+```
+
+**Manual:**
+```bash
+cd services/api-gateway
+uv run uvicorn gateway.main:app --port 8000
+```

@@ -74,6 +74,10 @@ web-ui/
 ### Method A: Automated (Root Makefile)
 From the project root directory:
 ```bash
+# 1. Start Infrastructure
+make infra-up
+
+# 2. Start all services (Backend + Frontend)
 make dev
 ```
 
@@ -93,7 +97,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 ```bash
 npm run dev
 ```
-*The app will be available at [http://localhost:3000](http://localhost:3000)*
+*The app will be available at [http://localhost:3000](http://localhost:3000) (or 3001 if 3000 is occupied).*
 
 ### 4. Build for Production
 ```bash
