@@ -1,9 +1,10 @@
+import os
 import subprocess
 import sys
 from pathlib import Path
 
 
-def run_command(command, cwd):
+def run_command(command, cwd, env=None):
     print(f"Executing: {' '.join(command)} in {cwd}")
     try:
         # Use shell=False for security, pass environment variables explicitly if needed
@@ -11,6 +12,7 @@ def run_command(command, cwd):
         subprocess.run(
             command,
             cwd=cwd,
+            env=env or os.environ,
             check=True,
             text=True,
             capture_output=False  # Show output in real-time
@@ -81,10 +83,20 @@ def main():
 
         cwd = services_dir / service_name
 
+        # For characteristic-service, it becomes characteristic_db
+        db_name = service_name.replace("-service", "_db")
+        
+        # Prepare environment with DATABASE_URL if not already set
+        env = os.environ.copy()
+        if "DATABASE_URL" not in env:
+            # Default local connection string
+            env["DATABASE_URL"] = f"postgresql://user:password@localhost:5432/{db_name}"
+            print(f"Using default DATABASE_URL: {env['DATABASE_URL']}")
+
         # Build command: uv run alembic <args>
         # We use uv run to ensure the service's specific environment is used
         command = ["uv", "run", "alembic"] + args
-        run_command(command, cwd)
+        run_command(command, cwd, env=env)
 
 if __name__ == "__main__":
     main()
