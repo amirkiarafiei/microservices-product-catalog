@@ -1,5 +1,13 @@
 # TMF Product Catalog Microservices System
 
+[![Tests: 108](https://img.shields.io/badge/Tests-108%20passing-brightgreen.svg)](#testing)
+[![Code: 14.2K LOC](https://img.shields.io/badge/Code-14.2K%20LOC-informational.svg)](#project-statistics)
+[![Documentation](https://img.shields.io/badge/Docs-5.7K%20lines-blue.svg)](#project-documentation)
+[![View Code Wiki](https://www.gstatic.com/_/boq-sdlc-agents-ui/_/r/YUi5dj2UWvE.svg)](https://codewiki.google/github.com/amirkiarafiei/microservices-product-catalog)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/amirkiarafiei/microservices-product-catalog)
+
+---
+
 A cloud-native, event-driven microservices platform for managing telecommunications product catalogs. This project demonstrates high-scale architectural patterns including **Distributed Sagas**, **CQRS**, and **Transactional Outbox**.
 
 **GitHub:** [https://github.com/amirkiarafiei/microservices-product-catalog](https://github.com/amirkiarafiei/microservices-product-catalog)
