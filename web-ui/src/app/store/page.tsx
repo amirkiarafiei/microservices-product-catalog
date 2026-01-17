@@ -1,75 +1,213 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { ShoppingBag, Search, Filter } from "lucide-react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { 
+  ShoppingBag, 
+  Loader2, 
+  AlertCircle,
+  Plus
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { apiClient } from "@/lib/api-client";
+import { toast } from "react-hot-toast";
+import FilterPanel, { FilterState } from "@/components/ui/FilterPanel";
+import OfferingCard from "@/components/ui/OfferingCard";
+import OfferingDetail from "@/components/ui/OfferingDetail";
+import Modal from "@/components/ui/Modal";
+
+function StoreContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  
+  const [offerings, setOfferings] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedOffering, setSelectedOffering] = useState<any>(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [skip, setSkip] = useState(0);
+  const LIMIT = 12;
+
+  // Sync state from URL on mount
+  const initialFilters: FilterState = {
+    q: searchParams.get("q") || "",
+    min_price: searchParams.get("min_price") || "",
+    max_price: searchParams.get("max_price") || "",
+    channel: searchParams.get("channel") || "",
+    characteristic: searchParams.getAll("characteristic") || []
+  };
+
+  const fetchOfferings = async (filters: FilterState, append = false) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const params: Record<string, any> = {
+        skip: append ? skip + LIMIT : 0,
+        limit: LIMIT
+      };
+      
+      if (filters.q) params.q = filters.q;
+      if (filters.min_price) params.min_price = filters.min_price;
+      if (filters.max_price) params.max_price = filters.max_price;
+      if (filters.channel) params.channel = filters.channel;
+      if (filters.characteristic.length > 0) params.characteristic = filters.characteristic;
+
+      const result = await apiClient.get<any>("/store/search", { params });
+      
+      if (append) {
+        setOfferings(prev => [...prev, ...result.items]);
+        setSkip(prev => prev + LIMIT);
+      } else {
+        setOfferings(result.items);
+        setSkip(0);
+      }
+      setTotal(result.total);
+    } catch (err: any) {
+      console.error(err);
+      setError("Failed to load product offerings. Please try again later.");
+      toast.error("Could not connect to the store service.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFilterChange = (newFilters: FilterState) => {
+    // Update URL params
+    const params = new URLSearchParams();
+    if (newFilters.q) params.set("q", newFilters.q);
+    if (newFilters.min_price) params.set("min_price", newFilters.min_price);
+    if (newFilters.max_price) params.set("max_price", newFilters.max_price);
+    if (newFilters.channel) params.set("channel", newFilters.channel);
+    newFilters.characteristic.forEach(c => params.append("characteristic", c));
+    
+    const query = params.toString();
+    router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
+    
+    fetchOfferings(newFilters);
+  };
+
+  const handleLoadMore = () => {
+    fetchOfferings(initialFilters, true);
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+        <div className="flex items-center space-x-4">
+          <div className="w-14 h-14 bg-orange-brand rounded-2xl flex items-center justify-center shadow-lg shadow-orange-brand/20">
+            <ShoppingBag className="text-white w-7 h-7" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Marketplace</h1>
+            <p className="text-slate-500 font-medium mt-1">Discover our latest telecommunication products</p>
+          </div>
+        </div>
+        <div className="bg-slate-100 px-4 py-2 rounded-xl border border-slate-200">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+            {isLoading ? "Updating..." : `Showing ${offerings.length} of ${total} results`}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-10">
+        {/* Sidebar / Filters */}
+        <aside className="lg:w-80 flex-shrink-0">
+          <FilterPanel 
+            onFilterChange={handleFilterChange} 
+            initialFilters={initialFilters} 
+          />
+        </aside>
+
+        {/* Results Grid */}
+        <main className="flex-grow">
+          {error ? (
+            <div className="bg-red-50 border border-red-100 rounded-3xl p-12 text-center flex flex-col items-center space-y-4">
+              <AlertCircle className="w-12 h-12 text-red-400" />
+              <h3 className="text-xl font-bold text-red-900">Oops! Something went wrong</h3>
+              <p className="text-red-600 font-medium max-w-sm mx-auto">{error}</p>
+              <button 
+                onClick={() => fetchOfferings(initialFilters)}
+                className="mt-4 px-6 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : offerings.length === 0 && !isLoading ? (
+            <div className="bg-slate-50 border border-dashed border-slate-200 rounded-3xl p-20 text-center flex flex-col items-center space-y-4">
+              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-2">
+                <ShoppingBag className="w-8 h-8 text-slate-200" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900">No offerings found</h3>
+              <p className="text-slate-500 font-medium max-w-xs mx-auto">Try adjusting your filters or keyword to find what you're looking for.</p>
+            </div>
+          ) : (
+            <div className="space-y-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                <AnimatePresence mode="popLayout">
+                  {offerings.map((offering) => (
+                    <OfferingCard 
+                      key={offering.id} 
+                      offering={offering} 
+                      onClick={() => setSelectedOffering(offering)}
+                    />
+                  ))}
+                </AnimatePresence>
+                
+                {isLoading && Array.from({ length: 3 }).map((_, i) => (
+                  <div key={`skeleton-${i}`} className="bg-slate-100 animate-pulse rounded-3xl h-96 border border-slate-200" />
+                ))}
+              </div>
+
+              {offerings.length < total && (
+                <div className="flex justify-center pt-8 border-t border-slate-100">
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={isLoading}
+                    className="flex items-center space-x-2.5 px-8 py-4 bg-white border-2 border-slate-900 text-slate-900 rounded-2xl font-black hover:bg-slate-900 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <>
+                        <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                        <span>Load More Products</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* Detail Modal */}
+      <Modal
+        isOpen={!!selectedOffering}
+        onClose={() => setSelectedOffering(null)}
+        title="Product Details"
+        size="lg"
+      >
+        {selectedOffering && (
+          <OfferingDetail offering={selectedOffering} />
+        )}
+      </Modal>
+    </div>
+  );
+}
 
 export default function StorePage() {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 space-y-4 md:space-y-0">
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-orange-light rounded-xl flex items-center justify-center">
-            <ShoppingBag className="text-orange-brand w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Marketplace</h1>
-            <p className="text-slate-500">Browse our published product offerings</p>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Search offerings..." 
-              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-orange-brand/20 focus:border-orange-brand outline-none transition-all w-full md:w-64"
-            />
-          </div>
-          <button className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-            <Filter className="w-5 h-5 text-slate-600" />
-          </button>
-        </div>
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <Loader2 className="w-12 h-12 animate-spin text-orange-brand" />
+        <p className="text-slate-400 font-bold tracking-widest uppercase text-[10px]">Entering Marketplace...</p>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {[1, 2, 3, 4, 5, 6].map((_, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="group bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-          >
-            <div className="aspect-video bg-slate-100 flex items-center justify-center group-hover:bg-orange-light/50 transition-colors">
-              <ShoppingBag className="w-12 h-12 text-slate-300 group-hover:text-orange-brand transition-colors" />
-            </div>
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-lg font-bold text-slate-900 group-hover:text-orange-brand transition-colors">
-                  Product Offering {i+1}
-                </h3>
-                <span className="text-orange-brand font-bold">$29.99</span>
-              </div>
-              <p className="text-sm text-slate-500 line-clamp-2">
-                This is a sample product offering description that demonstrates the layout of the marketplace grid.
-              </p>
-              <div className="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  Unlimited Data
-                </span>
-                <button className="text-sm font-semibold text-orange-brand hover:underline">
-                  View Details
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-      
-      <div className="mt-12 text-center">
-        <p className="text-sm text-slate-400">Marketplace items will be fetched from the Store Query Service in the next phase</p>
-      </div>
-    </div>
+    }>
+      <StoreContent />
+    </Suspense>
   );
 }

@@ -35,9 +35,16 @@ A modern, responsive, and "snappy" management portal and shopping interface for 
 - **Smart Actions:** 
   - Edit/Delete with pre-filled forms.
   - Lifecycle management (Publish/Retire offerings).
+  - Direct "Publish Now" with real-time status polling.
   - Safety locks (Prices are read-only when used in published offerings).
 
-### 4. Enterprise UI/UX
+### 4. The Store (Public Marketplace)
+- **Public Catalog:** Browse published offerings without logging in.
+- **Advanced Filtering:** Keyword search, price range, and sales channel filters.
+- **URL Synchronization:** Filters and search queries are stored in the URL for easy sharing.
+- **Offering Detail:** Immersive view of product details, specifications, and pricing.
+
+### 5. Enterprise UI/UX
 - **Orange Branding:** Custom accent colors inspired by the "Orange" telecom brand.
 - **Micro-animations:** Subtle hover effects and layout transitions to enhance feel.
 - **Responsive:** Desktop-first design that scales down gracefully.

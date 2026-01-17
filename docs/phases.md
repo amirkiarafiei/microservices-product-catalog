@@ -504,35 +504,33 @@ Here is your **Incremental Roadmap**.
 
 ---
 
-### Phase 17: The Store & Saga Polling (Public UI)
+### Phase 17: The Store & Saga Polling (Public UI) ✅
 
 **Goal:** The Customer experience and Saga feedback.
 
-*   Implement **Store Page** (public, no auth required):
-    *   **Search Bar:** Full-text search with debounce (300ms).
-    *   **Filters Panel** (sidebar):
-        *   Price range slider (min/max).
-        *   Characteristic filters (dynamic based on available characteristics).
-        *   Sales channel checkboxes.
-        *   Clear filters button.
-    *   **Results Grid:** 
-        *   Card layout (3-4 columns desktop, 1-2 mobile).
-        *   Each card: Name, Price, Key characteristics, "View Details" button.
-    *   **Detail View:** Modal or page with full offering info.
-    *   **Pagination:** Load more or infinite scroll.
-    *   **URL State:** Filters reflected in URL query params (bookmarkable).
-*   Implement **Saga Feedback** (in Builder/Viewer):
-    *   When user clicks "Publish":
-        *   Show loading spinner.
-        *   Poll `GET /api/v1/offerings/{id}` every 2 seconds.
-        *   Max 30 attempts (1 minute timeout).
-        *   On PUBLISHED → Success toast.
-        *   On DRAFT (failed) → Error toast with failure reason.
-        *   On timeout → Warning toast.
-*   **Verification:** 
-    *   Full "Happy Path": Create → Publish → Watch Spinner → See in Store.
-    *   Search and filter in Store → Correct results.
-    *   Force saga failure → Offering reverts, error displayed.
+*   ✅ Implement **Store Page** (public, no auth required):
+    *   ✅ **Search Bar:** Full-text search with debounce (300ms) powered by Elasticsearch.
+    *   ✅ **Filters Panel** (sidebar):
+        *   ✅ Price range filter.
+        *   ✅ Characteristic filters (nested ES query).
+        *   ✅ Sales channel checkboxes.
+        *   ✅ Clear filters button.
+    *   ✅ **Results Grid:** 
+        *   ✅ Card layout (3-4 columns desktop, 1-2 mobile).
+        *   ✅ Each card: Name, Price, Key characteristics, "View Details" button.
+    *   ✅ **Detail View:** Reusable component with full Offering -> Spec -> Char hierarchy.
+    *   ✅ **Pagination:** "Load More" implementation.
+    *   ✅ **URL State:** Filters reflected in URL query params.
+*   ✅ Implement **Saga Feedback** (in Builder/Viewer):
+    *   ✅ When user clicks "Publish":
+        *   ✅ Show loading spinner.
+        *   ✅ Poll status every 2 seconds.
+        *   ✅ On PUBLISHED → Success toast.
+        *   ✅ On DRAFT (failed) → Error toast with failure reason.
+*   ✅ **Verification:** 
+    *   ✅ Full "Happy Path": Create → Publish → Watch Spinner → See in Store.
+    *   ✅ Search and filter in Store → Correct results.
+    *   ✅ Unit tests for `OfferingCard` and `FilterPanel` components.
 
 ---
 

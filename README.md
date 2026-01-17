@@ -199,5 +199,5 @@ cd libs/common-python && uv run pytest tests -v
 - [x] **Phase 14:** UI Scaffold & Authentication (Next.js 16, Tailwind 4)
 - [x] **Phase 15:** Admin UI - The Builder (Create Entities)
 - [x] **Phase 16:** Admin UI - The Viewer (Manage Entities)
-- [ ] **Phase 17:** Customer UI - The Store (Browse Offerings)
+- [x] **Phase 17:** Customer UI - The Store & Saga Polling
 - [ ] **Phase 18:** Final Polish & Deployment

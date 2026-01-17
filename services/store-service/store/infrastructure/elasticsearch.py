@@ -35,7 +35,7 @@ class ElasticsearchClient:
                                     "properties": {
                                         "name": {"type": "keyword"},
                                         "value": {"type": "keyword"},
-                                        "unit": {"type": "keyword"}
+                                        "unit_of_measure": {"type": "keyword"}
                                     }
                                 }
                             }
@@ -62,8 +62,13 @@ class ElasticsearchClient:
     async def delete_offering(self, offering_id: str):
         await self.client.delete(index=self.index, id=offering_id, ignore=[404], refresh=True)
 
-    async def search_offerings(self, query_body: dict):
-        return await self.client.search(index=self.index, body=query_body)
+    async def search_offerings(self, query_body: dict, from_: int = 0, size: int = 10):
+        return await self.client.search(
+            index=self.index,
+            body=query_body,
+            from_=from_,
+            size=size
+        )
 
     async def close(self):
         await self.client.close()

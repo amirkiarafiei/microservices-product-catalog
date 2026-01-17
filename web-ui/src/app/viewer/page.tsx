@@ -18,7 +18,8 @@ import {
   ExternalLink,
   ShieldCheck,
   ShieldAlert,
-  Loader2
+  Loader2,
+  Send
 } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { toast } from "react-hot-toast";
@@ -29,6 +30,8 @@ import CharacteristicForm from "@/components/forms/CharacteristicForm";
 import SpecificationForm from "@/components/forms/SpecificationForm";
 import PricingForm from "@/components/forms/PricingForm";
 import OfferingForm from "@/components/forms/OfferingForm";
+import OfferingDetail from "@/components/ui/OfferingDetail";
+import { useSagaPolling } from "@/lib/hooks";
 
 type TabType = "characteristic" | "specification" | "pricing" | "offering";
 
@@ -42,9 +45,11 @@ export default function ViewerPage() {
   const [viewItem, setViewItem] = useState<any>(null);
   const [deleteItem, setDeleteItem] = useState<any>(null);
   const [retireItem, setRetireItem] = useState<any>(null);
+  const [publishItem, setPublishItem] = useState<any>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [detailedOffering, setDetailedDetailedOffering] = useState<any>(null);
   const [detailedSpec, setDetailedSpec] = useState<any>(null);
+  const { isPolling, pollStatus } = useSagaPolling();
 
   const tabs = [
     { id: "characteristic", name: "Characteristics", icon: Settings2 },
@@ -100,6 +105,24 @@ export default function ViewerPage() {
       setRetireItem(null);
     } catch (error: any) {
       toast.error(error.message || "Failed to retire offering");
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handlePublish = async (item: any) => {
+    setIsActionLoading(true);
+    const loadingToast = toast.loading(`Initiating publication for "${item.name}"...`);
+    try {
+      await apiClient.post(`/offerings/${item.id}/publish`);
+      pollStatus({
+        id: item.id,
+        onSuccess: () => fetchData()
+      });
+      toast.success("Publication saga started!", { id: loadingToast });
+      fetchData(); // Update status to PUBLISHING
+    } catch (error: any) {
+      toast.error(error.message || "Failed to initiate publication", { id: loadingToast });
     } finally {
       setIsActionLoading(false);
     }
@@ -219,7 +242,7 @@ export default function ViewerPage() {
     ],
     pricing: [
       { header: "Name", accessor: "name", sortable: true, className: "font-bold text-slate-900" },
-      { header: "Price", accessor: (item) => `${item.price_value} ${item.currency}`, sortable: true },
+      { header: "Price", accessor: (item) => `${item.value} ${item.currency}`, sortable: true },
       { header: "Unit", accessor: "unit", sortable: true },
       { 
         header: "Status", 
@@ -274,6 +297,14 @@ export default function ViewerPage() {
             </button>
             {item.lifecycle_status === "DRAFT" && (
               <>
+                <button 
+                  onClick={() => handlePublish(item)} 
+                  disabled={isActionLoading}
+                  className="p-2 text-slate-400 hover:text-green-500 hover:bg-green-50 rounded-lg transition-all"
+                  title="Publish Now"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
                 <button onClick={() => setEditItem(item)} className="p-2 text-slate-400 hover:text-orange-brand hover:bg-orange-light rounded-lg transition-all">
                   <Edit2 className="w-4 h-4" />
                 </button>
@@ -409,24 +440,21 @@ export default function ViewerPage() {
           title={`${activeTab === "offering" ? "Product Offering" : "Specification"} Details`}
           size="lg"
         >
-          {viewItem && (
+          {viewItem && activeTab === "specification" && (
             <div className="space-y-8">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <h2 className="text-2xl font-bold text-slate-900">{viewItem.name}</h2>
-                  <p className="text-slate-500">
-                    {activeTab === "offering" ? (viewItem.description || "No description provided.") : "Technical Specification details."}
-                  </p>
+                  <p className="text-slate-500">Technical Specification details.</p>
                 </div>
-                {activeTab === "offering" && renderStatusBadge(viewItem.lifecycle_status)}
               </div>
 
-              {isActionLoading && !detailedOffering && !detailedSpec ? (
+              {isActionLoading && !detailedSpec ? (
                 <div className="flex flex-col items-center py-12 space-y-4">
                   <Loader2 className="w-8 h-8 animate-spin text-orange-brand" />
                   <p className="text-sm text-slate-400 font-medium">Loading details...</p>
                 </div>
-              ) : activeTab === "specification" ? (
+              ) : (
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2 text-slate-900 font-bold border-b border-slate-100 pb-2">
                     <Settings2 className="w-4 h-4" />
@@ -443,70 +471,12 @@ export default function ViewerPage() {
                     ))}
                   </div>
                 </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-2 text-slate-900 font-bold border-b border-slate-100 pb-2">
-                        <Box className="w-4 h-4" />
-                        <span>Specifications</span>
-                      </div>
-                      <div className="space-y-2">
-                        {detailedOffering?.specifications?.map((spec: any) => (
-                          <div key={spec.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="font-bold text-slate-800 text-sm">{spec.name}</span>
-                              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-                            </div>
-                            <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Technical Spec</p>
-                          </div>
-                        )) || viewItem.specification_ids?.map((id: string) => (
-                          <div key={id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-400 italic">
-                            Loading spec {id.slice(0,8)}...
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-2 text-slate-900 font-bold border-b border-slate-100 pb-2">
-                        <DollarSign className="w-4 h-4" />
-                        <span>Pricing Plans</span>
-                      </div>
-                      <div className="space-y-2">
-                        {detailedOffering?.prices?.map((price: any) => (
-                          <div key={price.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
-                            <div className="space-y-0.5">
-                              <p className="font-bold text-slate-800 text-sm">{price.name}</p>
-                              <p className="text-xs text-slate-500">{price.unit}</p>
-                            </div>
-                            <span className="text-orange-brand font-extrabold">{price.price_value} {price.currency}</span>
-                          </div>
-                        )) || viewItem.price_ids?.map((id: string) => (
-                          <div key={id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-400 italic">
-                            Loading price {id.slice(0,8)}...
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2 text-slate-900 font-bold border-b border-slate-100 pb-2">
-                      <ShoppingBag className="w-4 h-4" />
-                      <span>Sales Channels</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {viewItem.sales_channels?.map((channel: string) => (
-                        <span key={channel} className="px-4 py-1.5 bg-orange-light text-orange-brand rounded-full text-xs font-bold border border-orange-brand/10">
-                          {channel}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </>
               )}
             </div>
+          )}
+
+          {viewItem && activeTab === "offering" && (
+            <OfferingDetail offering={detailedOffering || viewItem} isLoading={isActionLoading} />
           )}
         </Modal>
       </div>

@@ -21,6 +21,7 @@ import { apiClient } from "@/lib/api-client";
 import { toast } from "react-hot-toast";
 import MultiSelect from "@/components/ui/MultiSelect";
 import { cn } from "@/lib/utils";
+import { useSagaPolling } from "@/lib/hooks";
 
 const offeringSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -48,6 +49,7 @@ export default function OfferingForm({ initialData, onSuccess }: OfferingFormPro
   const [specs, setSpecs] = useState<Entity[]>([]);
   const [prices, setPrices] = useState<Entity[]>([]);
   const isEdit = !!initialData;
+  const { isPolling, pollStatus } = useSagaPolling();
 
   const {
     control,
@@ -130,9 +132,16 @@ export default function OfferingForm({ initialData, onSuccess }: OfferingFormPro
       // 2. Trigger publish saga
       await apiClient.post(`/offerings/${offeringId}/publish`);
       
-      toast.success("Publication saga started! Check status in Viewer.", { id: loadingToast });
-      if (!isEdit) reset();
-      if (onSuccess) onSuccess();
+      // 3. Start polling for status
+      pollStatus({
+        id: offeringId!,
+        onSuccess: () => {
+          if (!isEdit) reset();
+          if (onSuccess) onSuccess();
+        }
+      });
+      
+      toast.success("Publication saga started!", { id: loadingToast });
     } catch (error: any) {
       toast.error(error.message || "Failed to initiate publication", { id: loadingToast });
     } finally {
@@ -305,12 +314,12 @@ export default function OfferingForm({ initialData, onSuccess }: OfferingFormPro
             <motion.button
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
-              disabled={isLoading || isFetching}
+              disabled={isLoading || isFetching || isPolling}
               type="button"
               onClick={handleSubmit(onPublish)}
               className="py-3.5 bg-orange-brand hover:bg-orange-hover text-white font-bold rounded-xl shadow-lg shadow-orange-brand/20 transition-all flex items-center justify-center space-x-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {isLoading ? (
+              {isLoading || isPolling ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>

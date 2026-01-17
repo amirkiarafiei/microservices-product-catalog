@@ -403,7 +403,7 @@ The system is composed of 6 autonomous services:
 | **Pricing Service** | Write | **Commercial Context.** Manages monetary definitions. Supports "Locking" during active Sagas. | ✅ Implemented (CRUD + Locking) |
 | **Offering Service** | Write | **Product Context (Aggregate Root).** Bundles Specs + Prices. **Saga Orchestrator** for publication lifecycle. | ✅ Implemented (Saga Orchestration) |
 | **Store Query Service** | Read | **Sales Context (CQRS View).** Consumes events to build a read-optimized, searchable catalog (Elasticsearch/Mongo). | ✅ Implemented (CQRS + Search) |
-| **Web UI** | Frontend | **Management & Shopping Portal.** Modern Next.js 16 application with Builder, Viewer, and Marketplace views. | ✅ Implemented (Phase 16) |
+| **Web UI** | Frontend | **Management & Shopping Portal.** Modern Next.js 16 application with Builder, Viewer, and Marketplace views. | ✅ Implemented (Phase 17) |
 
 ---
 

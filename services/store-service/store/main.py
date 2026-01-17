@@ -5,7 +5,7 @@ Provides search and query operations over denormalized product data in MongoDB/E
 """
 
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import List, Optional
 
 from common.exceptions import AppException
 from common.logging import setup_logging
@@ -118,6 +118,7 @@ async def search_offerings(
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
     channel: Optional[str] = None,
+    characteristic: Optional[List[str]] = Query(None),
     skip: int = 0,
     limit: int = 10,
 ):
@@ -129,6 +130,7 @@ async def search_offerings(
         min_price: Minimum price filter.
         max_price: Maximum price filter.
         channel: Sales channel filter.
+        characteristic: List of characteristic filters in format "name:value".
         skip: Pagination offset.
         limit: Page size.
     """
@@ -147,19 +149,42 @@ async def search_offerings(
         )
 
     if min_price is not None or max_price is not None:
-        range_clause = {"range": {"prices.amount": {}}}
+        range_clause = {"nested": {
+            "path": "pricing",
+            "query": {
+                "range": {"pricing.value": {}}
+            }
+        }}
         if min_price is not None:
-            range_clause["range"]["prices.amount"]["gte"] = min_price
+            range_clause["nested"]["query"]["range"]["pricing.value"]["gte"] = min_price
         if max_price is not None:
-            range_clause["range"]["prices.amount"]["lte"] = max_price
+            range_clause["nested"]["query"]["range"]["pricing.value"]["lte"] = max_price
         filter_clauses.append(range_clause)
 
     if channel:
         filter_clauses.append({"term": {"sales_channels": channel}})
 
+    if characteristic:
+        for char_filter in characteristic:
+            if ":" in char_filter:
+                name, value = char_filter.split(":", 1)
+                filter_clauses.append({
+                    "nested": {
+                        "path": "specifications.characteristics",
+                        "query": {
+                            "bool": {
+                                "must": [
+                                    {"term": {"specifications.characteristics.name": name}},
+                                    {"term": {"specifications.characteristics.value": value}}
+                                ]
+                            }
+                        }
+                    }
+                })
+
     query = {"bool": {"must": must or [{"match_all": {}}], "filter": filter_clauses}}
 
-    results = await es_client.search(query=query, from_=skip, size=limit)
+    results = await es_client.search_offerings(query, from_=skip, size=limit)
     return results
 
 

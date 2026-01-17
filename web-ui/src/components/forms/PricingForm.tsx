@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 const pricingSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  price_value: z.number().positive("Price must be positive"),
+  value: z.number().positive("Price must be positive"),
   unit: z.string().min(1, "Unit is required"),
   currency: z.enum(["USD", "EUR", "TRY"]),
 });
@@ -38,7 +38,7 @@ export default function PricingForm({ initialData, onSuccess }: PricingFormProps
     defaultValues: initialData || {
       currency: "USD",
       unit: "per month",
-      price_value: 0,
+      value: 0,
     },
   });
 
@@ -98,7 +98,7 @@ export default function PricingForm({ initialData, onSuccess }: PricingFormProps
               <label className="text-sm font-semibold text-slate-700">Price Value</label>
               <div className="relative">
                 <input
-                  {...register("price_value", { valueAsNumber: true })}
+                  {...register("value", { valueAsNumber: true })}
                   type="number"
                   step="0.01"
                   placeholder="0.00"
@@ -106,8 +106,8 @@ export default function PricingForm({ initialData, onSuccess }: PricingFormProps
                 />
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
               </div>
-              {errors.price_value && (
-                <p className="text-xs text-red-500 font-medium">{errors.price_value.message}</p>
+              {errors.value && (
+                <p className="text-xs text-red-500 font-medium">{errors.value.message}</p>
               )}
             </div>
 
