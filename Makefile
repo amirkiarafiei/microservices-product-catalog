@@ -83,6 +83,7 @@ backend:
 	@cd services/specification-service && uv run uvicorn src.main:app --port 8003 > ../../logs/specification.log 2>&1 &
 	@cd services/pricing-service && uv run uvicorn pricing.main:app --port 8004 > ../../logs/pricing.log 2>&1 &
 	@cd services/offering-service && uv run uvicorn offering.main:app --port 8005 > ../../logs/offering.log 2>&1 &
+	@cd services/offering-service && uv run python -m offering.saga_worker > ../../logs/offering-worker.log 2>&1 &
 	@cd services/store-service && uv run uvicorn store.main:app --port 8006 > ../../logs/store.log 2>&1 &
 	@echo "Backend services are starting. Check logs/ directory for output."
 

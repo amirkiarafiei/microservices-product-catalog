@@ -173,7 +173,7 @@ async def create_offering(offering_in: OfferingCreate, db: Session = Depends(get
 @app.get(
     "/api/v1/offerings/{offering_id}",
     response_model=OfferingRead,
-    dependencies=[Depends(any_user_required)],
+    # No auth required for internal service-to-service calls
 )
 def get_offering(offering_id: uuid.UUID, db: Session = Depends(get_db)):
     service = OfferingService(db)
@@ -183,7 +183,7 @@ def get_offering(offering_id: uuid.UUID, db: Session = Depends(get_db)):
 @app.get(
     "/api/v1/offerings",
     response_model=List[OfferingRead],
-    dependencies=[Depends(any_user_required)],
+    # No auth required for internal service-to-service calls
 )
 def list_offerings(
     skip: int = Query(0, ge=0),
