@@ -71,7 +71,14 @@ web-ui/
 
 ## 🚀 Getting Started
 
-### 1. Install Dependencies
+### Method A: Automated (Root Makefile)
+From the project root directory:
+```bash
+make dev
+```
+
+### Method B: Manual (Inside web-ui)
+1. Install Dependencies
 ```bash
 npm install
 ```

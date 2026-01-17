@@ -130,41 +130,41 @@ flowchart LR
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Automated)
 
-### 1. Prerequisites
-- **Docker & Docker Compose**
-- **Python 3.12+**
-- **[uv](https://docs.astral.sh/uv/)** package manager
+We use a `Makefile` to simplify monorepo orchestration.
 
-### 2. Infrastructure Setup
-Spin up the complete stack (Databases, Broker, Workflow, Tracing, ELK):
+### 1. Infrastructure
+Spin up the databases and middleware:
 ```bash
-docker compose up -d
+make infra-up
 ```
 
-### 3. Security Setup (RSA Keys)
-Generate the keys used for zero-trust JWT signing:
+### 2. First-Time Setup
+Run these once to prepare security and databases:
 ```bash
-./scripts/generate_keys.sh
+make setup-keys  # Generate RSA keys
+make migrate     # Apply DB schemas
 ```
-*Follow the script instructions to update `services/identity-service/.env`.*
+*Note: Follow script instructions to update `services/identity-service/.env` after generating keys.*
 
-### 4. Database Migrations
-Apply schemas to all PostgreSQL write databases:
+### 3. Running the App
+You can start everything with a single command:
 ```bash
-python scripts/migrate.py upgrade head
+make dev
 ```
+*   **Backend:** Starts 7 microservices in the background (logs saved to `logs-*.log`).
+*   **Frontend:** Starts the Next.js dev server on [http://localhost:3000](http://localhost:3000).
 
-### 5. Running the Services
-You can run services locally for debugging:
+### 4. Management
 ```bash
-# Example: Offering Service
-cd services/offering-service
-uv run uvicorn offering.main:app --reload --port 8005
+make status  # Check which services are running
+make stop    # Stop all background backend services
 ```
 
 ---
+
+## 🚀 Manual Execution (Alternative)
 
 ## 🕵️ Observability & Monitoring
 
