@@ -1,32 +1,55 @@
-import asyncio
 import logging
+import os
+from typing import Any, Dict, List
 
 import httpx
-from camunda.external_task.external_task import ExternalTask
-from common.camunda import CamundaWorker
+from common.camunda_rest import BpmnError, CamundaRestWorker
 
 from .config import settings
 
 logger = logging.getLogger(__name__)
 
-async def run_specification_worker():
-    worker = CamundaWorker(base_url=settings.CAMUNDA_URL, worker_id=f"spec-worker-{settings.SERVICE_NAME}")
 
-    def handle_validate_specs(task: ExternalTask):
-        spec_ids = task.get_variable("specificationIds")
+def _get_admin_token(identity_url: str) -> str:
+    resp = httpx.post(
+        f"{identity_url}/api/v1/auth/login",
+        data={"username": "admin", "password": "admin"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        timeout=10.0,
+    )
+    resp.raise_for_status()
+    return resp.json()["access_token"]
 
+
+def _as_str_list(v: Any) -> List[str]:
+    if v is None:
+        return []
+    if isinstance(v, list):
+        return [str(x) for x in v]
+    return [str(v)]
+
+
+def run_specification_worker():
+    identity_url = os.getenv("IDENTITY_SERVICE_URL", "http://localhost:8001")
+    token = _get_admin_token(identity_url)
+    auth_headers = {"Authorization": f"Bearer {token}"}
+
+    spec_api_url = os.getenv("SPECIFICATION_API_URL", "http://localhost:8003")
+    worker = CamundaRestWorker(base_url=settings.CAMUNDA_URL, worker_id=f"spec-worker-{settings.SERVICE_NAME}")
+
+    def handle_validate_specs(variables: Dict[str, Any], task: Dict[str, Any]) -> Dict[str, Any]:
+        spec_ids = _as_str_list(variables.get("specificationIds"))
         logger.info(f"Validating specifications: {spec_ids}")
 
-        with httpx.Client(timeout=10.0) as client:
-            resp = client.post(
-                "http://localhost:8003/api/v1/specifications/validate",
-                json=spec_ids,
-                headers={"X-Internal-Token": "secret"}
-            )
-            if resp.status_code != 204:
-                raise Exception(f"Validation failed for specifications {spec_ids}: {resp.text}")
-
+        resp = httpx.post(
+            f"{spec_api_url}/api/v1/specifications/validate",
+            json=spec_ids,
+            headers=auth_headers,
+            timeout=10.0,
+        )
+        if resp.status_code != 204:
+            raise BpmnError("VALIDATE_SPECS_FAILED", f"Validation failed for specifications {spec_ids}: {resp.text}")
         return {}
 
-    loop = asyncio.get_running_loop()
-    await loop.run_in_executor(None, lambda: worker.subscribe("validate-specifications", handle_validate_specs))
+    worker.subscribe("validate-specifications", handle_validate_specs)
+    worker.run_forever()

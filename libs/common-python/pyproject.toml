@@ -28,6 +28,8 @@ dependencies = [
     "opentelemetry-instrumentation-aio-pika>=0.42b0",
     # Propagators
     "opentelemetry-propagator-b3>=1.21.0",
+    # Testing / local infra (used by integration & e2e tests across the monorepo)
+    "testcontainers>=4.9.0",
 ]
 
 [build-system]

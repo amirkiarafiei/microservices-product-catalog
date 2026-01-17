@@ -12,16 +12,19 @@ sys.path.insert(0, BASE_DIR)
 from store.main import app  # noqa: E402
 
 
-@pytest.fixture(autouse=True)
-def mock_lifespan_deps():
-    with patch("store.infrastructure.elasticsearch.es_client.init_index", new_callable=AsyncMock), \
-         patch("store.infrastructure.elasticsearch.es_client.close", new_callable=AsyncMock), \
-         patch("store.infrastructure.mongodb.mongodb_client.close", new_callable=AsyncMock), \
-         patch("store.application.consumers.EventConsumerService.start", new_callable=AsyncMock), \
-         patch("store.application.consumers.EventConsumerService.stop", new_callable=AsyncMock):
-        yield
-
 @pytest.fixture
-def client(mock_lifespan_deps):
-    with TestClient(app) as test_client:
-        yield test_client
+def client():
+    """
+    Component-test client:
+    - Mocks external deps (Mongo/ES init + consumer start/stop)
+    - No Docker required
+    """
+    with (
+        patch("store.infrastructure.elasticsearch.es_client.init_index", new_callable=AsyncMock),
+        patch("store.infrastructure.elasticsearch.es_client.close", new_callable=AsyncMock),
+        patch("store.infrastructure.mongodb.mongodb_client.close", new_callable=AsyncMock),
+        patch("store.application.consumers.EventConsumerService.start", new_callable=AsyncMock),
+        patch("store.application.consumers.EventConsumerService.stop", new_callable=AsyncMock),
+    ):
+        with TestClient(app) as test_client:
+            yield test_client

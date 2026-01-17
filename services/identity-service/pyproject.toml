@@ -19,6 +19,14 @@ dependencies = [
 [tool.uv.sources]
 common-python = { workspace = true }
 
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "httpx>=0.25.0",
+    "testcontainers>=4.9.0",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

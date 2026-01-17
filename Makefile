@@ -1,6 +1,7 @@
 # Monorepo Management Makefile
 
 .PHONY: help infra-up infra-down setup-keys migrate backend frontend dev stop status
+.PHONY: install-all-deps test-all lint-all
 
 help:
 	@echo "TMF Product Catalog Microservices - Management"
@@ -20,6 +21,11 @@ help:
 	@echo "  make stop          - Stop all running backend services"
 	@echo "  make status        - Check which services are running on ports"
 	@echo "  make clean-logs    - Delete all backend log files"
+	@echo ""
+	@echo "Quality Commands:"
+	@echo "  make install-all-deps - Install backend (uv) + frontend (npm) deps"
+	@echo "  make test-all         - Run tests across backend + frontend (runs per-package to avoid import collisions)"
+	@echo "  make lint-all         - Run linters across backend + frontend"
 
 # --- Infrastructure ---
 infra-up:
@@ -34,6 +40,32 @@ setup-keys:
 
 migrate:
 	python scripts/migrate.py upgrade head
+
+# --- Tooling / Quality ---
+install-all-deps:
+	@echo "Installing backend deps (uv workspace)..."
+	@uv sync --all-groups
+	@echo "Installing frontend deps (npm)..."
+	@cd web-ui && npm ci
+
+test-all:
+	@echo "Running backend tests (per package)..."
+	@cd libs/common-python && uv run pytest tests -q
+	@cd services/api-gateway && uv run pytest tests -q
+	@cd services/identity-service && uv run pytest tests -q
+	@cd services/characteristic-service && uv run pytest tests -q
+	@cd services/specification-service && uv run pytest tests -q
+	@cd services/pricing-service && uv run pytest tests -q
+	@cd services/offering-service && uv run pytest tests -q
+	@cd services/store-service && uv run pytest tests -q
+	@echo "Running frontend tests..."
+	@cd web-ui && npm test
+
+lint-all:
+	@echo "Running backend lint (ruff)..."
+	@uv run ruff check .
+	@echo "Running frontend lint..."
+	@cd web-ui && npm run lint
 
 # --- Development ---
 
