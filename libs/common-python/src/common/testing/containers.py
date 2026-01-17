@@ -90,7 +90,7 @@ def start_postgres(dbname: str = "test_db"):
 
     url = container.get_connection_url()
     host = container.get_container_host_ip()
-    port = int(container.get_exposed_port(container.port_to_expose))
+    port = int(container.get_exposed_port(5432))
     return container, PostgresInfo(
         url=url,
         host=host,
@@ -144,16 +144,16 @@ def start_mongodb():
 
 def start_elasticsearch():
     _require_testcontainers()
-    from testcontainers.elasticsearch import ElasticsearchContainer
+    from testcontainers.elasticsearch import ElasticSearchContainer
 
     image = os.getenv("TESTCONTAINERS_ELASTIC_IMAGE", "docker.elastic.co/elasticsearch/elasticsearch:8.11.1")
-    container = ElasticsearchContainer(image)
+    container = ElasticSearchContainer(image)
     container.start()
 
     # testcontainers returns something like http://host:port
-    url = container.get_url()
     host = container.get_container_host_ip()
     port = int(container.get_exposed_port(9200))
+    url = f"http://{host}:{port}"
     wait_for_http_ok(f"{url}/_cluster/health", timeout_s=90.0)
     return container, ElasticsearchInfo(url=url, host=host, port=port)
 

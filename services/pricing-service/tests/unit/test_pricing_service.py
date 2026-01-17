@@ -5,10 +5,10 @@ from unittest.mock import MagicMock
 
 import pytest
 from common.exceptions import AppException, ConflictError
-from src.application.schemas import PriceCreate, PriceUpdate
-from src.application.service import PricingService
-from src.domain.models import CurrencyEnum
-from src.infrastructure.models import PriceORM
+from pricing.application.schemas import PriceCreate, PriceUpdate
+from pricing.application.service import PricingService
+from pricing.domain.models import CurrencyEnum
+from pricing.infrastructure.models import PriceORM
 
 
 @pytest.fixture

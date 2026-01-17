@@ -182,7 +182,7 @@ async def search_offerings(
                     }
                 })
 
-    query = {"bool": {"must": must or [{"match_all": {}}], "filter": filter_clauses}}
+    query = {"query": {"bool": {"must": must or [{"match_all": {}}], "filter": filter_clauses}}}
 
     results = await es_client.search_offerings(query, from_=skip, size=limit)
     return results
@@ -192,7 +192,6 @@ async def search_offerings(
 async def sync_offering(offering_id: str):
     service = StoreService(mongodb_client, es_client)
     await service.sync_offering(offering_id)
-    await service.close()
     return None
 
 
@@ -200,7 +199,6 @@ async def sync_offering(offering_id: str):
 async def delete_offering_read(offering_id: str):
     service = StoreService(mongodb_client, es_client)
     await service.retire_offering(offering_id)
-    await service.close()
     return None
 
 

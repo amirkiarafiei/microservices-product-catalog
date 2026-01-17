@@ -2,6 +2,7 @@ import os
 import sys
 
 import pytest
+import pytest_asyncio
 from common.testing.containers import start_elasticsearch, start_mongodb
 from fastapi.testclient import TestClient
 
@@ -21,8 +22,8 @@ def infra():
         mongo_container.stop()
 
 
-@pytest.fixture(scope="session", autouse=True)
-def configure_clients(infra):
+@pytest_asyncio.fixture(scope="function", autouse=True)
+async def configure_clients(infra):
     # Update settings first
     import store.config as config_module  # noqa: E402
 
@@ -40,6 +41,12 @@ def configure_clients(infra):
     es_mod.es_client = ElasticsearchClient()
     mongo_mod.mongodb_client = MongoDBClient()
 
+    # Initialize index manually since we might using AsyncClient without lifespan
+    try:
+        await es_mod.es_client.init_index()
+    except Exception as e:
+        print(f"Warning: init_index failed: {e}")
+
     # Update store.main module-level references (it imported the old instances)
     import store.main as main_mod  # noqa: E402
 
@@ -50,12 +57,11 @@ def configure_clients(infra):
 
     # Close clients
     try:
-        import asyncio
         import store.infrastructure.elasticsearch as es_mod2  # noqa: E402
         import store.infrastructure.mongodb as mongo_mod2  # noqa: E402
 
-        asyncio.run(es_mod2.es_client.close())
-        asyncio.run(mongo_mod2.mongodb_client.close())
+        await es_mod2.es_client.close()
+        await mongo_mod2.mongodb_client.close()
     except Exception:
         # best-effort cleanup; containers will be stopped anyway
         pass
@@ -67,6 +73,14 @@ def client(infra):
 
     with TestClient(app) as c:
         yield c
+
+@pytest_asyncio.fixture(scope="function")
+async def async_client(infra):
+    from store.main import app
+    from httpx import AsyncClient, ASGITransport
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        yield ac
 
 
 @pytest.fixture

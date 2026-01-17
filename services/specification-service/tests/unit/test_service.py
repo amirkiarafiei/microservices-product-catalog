@@ -52,10 +52,16 @@ def test_create_specification_success():
     db.commit = MagicMock()
     db.add = MagicMock()
 
+    def set_orm_defaults(orm_obj):
+        orm_obj.id = uuid.uuid4()
+        from datetime import datetime
+        orm_obj.created_at = datetime.utcnow()
+        orm_obj.updated_at = datetime.utcnow()
+
     service = SpecificationService(db)
     service.repository = MagicMock()
     service.repository.get_by_name.return_value = None
-    service.repository.create = MagicMock()
+    service.repository.create = MagicMock(side_effect=set_orm_defaults)
 
     spec_in = SpecificationCreate(name="Valid Spec", characteristic_ids=[char_id])
     spec = service.create_specification(spec_in)

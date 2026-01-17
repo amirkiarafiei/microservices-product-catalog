@@ -3,10 +3,10 @@ from decimal import Decimal
 
 import pytest
 from sqlalchemy.orm import Session
-from src.application.schemas import PriceCreate
-from src.application.service import PricingService
-from src.domain.models import CurrencyEnum
-from src.infrastructure.models import OutboxORM
+from pricing.application.schemas import PriceCreate
+from pricing.application.service import PricingService
+from pricing.domain.models import CurrencyEnum
+from pricing.infrastructure.models import OutboxORM
 
 
 @pytest.mark.asyncio

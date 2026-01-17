@@ -1,8 +1,9 @@
-import asyncio
+import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-
-def test_sync_offering_writes_mongo_and_es(client, mongodb_client, es_client):
+@pytest.mark.asyncio
+async def test_sync_offering_writes_mongo_and_es(async_client, mongodb_client, es_client):
+    client = async_client
     offering_id = "off-123"
 
     # Mock upstream HTTP calls done by StoreService.fetch_offering_details
@@ -40,22 +41,23 @@ def test_sync_offering_writes_mongo_and_es(client, mongodb_client, es_client):
     with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
         mock_get.side_effect = _mock_get
 
-        resp = client.post(f"/api/v1/store/sync/{offering_id}")
+        resp = await client.post(f"/api/v1/store/sync/{offering_id}")
         assert resp.status_code == 204
 
-    doc = asyncio.run(mongodb_client.offerings.find_one({"id": offering_id}, {"_id": 0}))
+    doc = await mongodb_client.offerings.find_one({"id": offering_id}, {"_id": 0})
     assert doc is not None
     assert doc["name"] == "Test Offering"
     assert doc["specifications"][0]["characteristics"][0]["name"] == "Speed"
 
     # ES should now contain the document as well
-    es_res = asyncio.run(es_client.search_offerings({"query": {"match_all": {}}}, from_=0, size=10))
+    es_res = await es_client.search_offerings({"query": {"match_all": {}}}, from_=0, size=10)
     hits = es_res["hits"]["hits"]
     assert any(h["_id"] == offering_id for h in hits)
 
 
-def test_search_endpoint_returns_hits(client):
-    resp = client.get("/api/v1/store/search")
+@pytest.mark.asyncio
+async def test_search_endpoint_returns_hits(async_client):
+    resp = await async_client.get("/api/v1/store/search")
     assert resp.status_code == 200
     body = resp.json()
     assert "hits" in body

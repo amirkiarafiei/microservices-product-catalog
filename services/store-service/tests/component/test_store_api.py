@@ -31,7 +31,7 @@ def test_get_offering_success(mock_mongo, client: TestClient):
 @patch("store.main.es_client")
 def test_search_offerings_error(mock_es, client: TestClient):
     # Setup mock to raise exception when search is called
-    mock_es.search = AsyncMock(side_effect=Exception("ES down"))
+    mock_es.search_offerings = AsyncMock(side_effect=Exception("ES down"))
 
     # FastAPI by default returns 500 for unhandled exceptions
     # The TestClient might raise the exception itself if raise_server_exceptions is True (default)

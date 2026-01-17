@@ -50,11 +50,11 @@ async def lifespan(app: FastAPI):
 
     # Initialize Outbox Listener
     # DSN for asyncpg (needs to be postgres:// instead of postgresql://)
-    dsn = (
-        settings.DATABASE_URL.replace("postgresql://", "postgres://")
-        if settings.DATABASE_URL
-        else None
-    )
+    # Also handle postgresql+psycopg2:// which SQLAlchemy might use
+    dsn = None
+    if settings.DATABASE_URL:
+        dsn = settings.DATABASE_URL.replace("postgresql+psycopg2://", "postgres://")
+        dsn = dsn.replace("postgresql://", "postgres://")
 
     if dsn:
         listener = OutboxListener(
