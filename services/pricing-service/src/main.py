@@ -145,7 +145,7 @@ def create_price(price_in: PriceCreate, db: Session = Depends(get_db)):
 @app.get(
     "/api/v1/prices/{price_id}",
     response_model=PriceRead,
-    dependencies=[Depends(any_user_required)],
+    # No auth required for internal service-to-service calls
 )
 def get_price(price_id: uuid.UUID, db: Session = Depends(get_db)):
     service = PricingService(db)
@@ -155,7 +155,7 @@ def get_price(price_id: uuid.UUID, db: Session = Depends(get_db)):
 @app.get(
     "/api/v1/prices",
     response_model=List[PriceRead],
-    dependencies=[Depends(any_user_required)],
+    # No auth required for internal service-to-service calls
 )
 def list_prices(
     skip: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=1000), db: Session = Depends(get_db)

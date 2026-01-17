@@ -184,7 +184,7 @@ def create_specification(spec_in: SpecificationCreate, db: Session = Depends(get
 @app.get(
     "/api/v1/specifications/{spec_id}",
     response_model=SpecificationRead,
-    dependencies=[Depends(any_user_required)],
+    # No auth required for internal service-to-service calls
 )
 def get_specification(spec_id: uuid.UUID, db: Session = Depends(get_db)):
     service = SpecificationService(db)
@@ -194,7 +194,7 @@ def get_specification(spec_id: uuid.UUID, db: Session = Depends(get_db)):
 @app.get(
     "/api/v1/specifications",
     response_model=List[SpecificationRead],
-    dependencies=[Depends(any_user_required)],
+    # No auth required for internal service-to-service calls
 )
 def list_specifications(
     skip: int = Query(0, ge=0),

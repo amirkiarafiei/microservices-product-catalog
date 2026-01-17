@@ -91,6 +91,7 @@ export default function OfferingForm({ initialData, onSuccess }: OfferingFormPro
   }, []);
 
   const onSaveDraft = async (data: OfferingFormValues) => {
+    console.log('=== SAVE DRAFT DATA ===', JSON.stringify(data, null, 2));
     setIsLoading(true);
     try {
       if (isEdit) {
@@ -103,6 +104,7 @@ export default function OfferingForm({ initialData, onSuccess }: OfferingFormPro
       }
       if (onSuccess) onSuccess();
     } catch (error: any) {
+      console.error('Save draft error:', error);
       toast.error(error.message || `Failed to ${isEdit ? "update" : "save"} offering`);
     } finally {
       setIsLoading(false);
