@@ -19,10 +19,12 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await apiClient.post<{ access_token: string }>("/auth/login", {
-        username,
-        password,
-      });
+      // Use URLSearchParams to send data as application/x-www-form-urlencoded
+      const formData = new URLSearchParams();
+      formData.append("username", username);
+      formData.append("password", password);
+
+      const response = await apiClient.post<{ access_token: string }>("/auth/login", formData);
       
       login(response.access_token, username);
     } catch (err: any) {

@@ -12,12 +12,12 @@ class GatewaySettings(BaseServiceSettings):
     PORT: int = 8000
 
     # Downstream Service URLs
-    IDENTITY_SERVICE_URL: str = "http://identity-service:8001"
-    CHARACTERISTIC_SERVICE_URL: str = "http://characteristic-service:8002"
-    SPECIFICATION_SERVICE_URL: str = "http://specification-service:8003"
-    PRICING_SERVICE_URL: str = "http://pricing-service:8004"
-    OFFERING_SERVICE_URL: str = "http://offering-service:8005"
-    STORE_SERVICE_URL: str = "http://store-service:8006"
+    IDENTITY_SERVICE_URL: str = "http://localhost:8001"
+    CHARACTERISTIC_SERVICE_URL: str = "http://localhost:8002"
+    SPECIFICATION_SERVICE_URL: str = "http://localhost:8003"
+    PRICING_SERVICE_URL: str = "http://localhost:8004"
+    OFFERING_SERVICE_URL: str = "http://localhost:8005"
+    STORE_SERVICE_URL: str = "http://localhost:8006"
 
     # Resilience Settings
     CONNECTION_TIMEOUT: float = 2.0

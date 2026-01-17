@@ -153,7 +153,7 @@ You can start everything with a single command:
 ```bash
 make dev
 ```
-*   **Backend:** Starts 7 microservices in the background (logs saved to `logs-*.log`).
+*   **Backend:** Starts 7 microservices in the background (logs saved to `logs/` directory).
 *   **Frontend:** Starts the Next.js dev server on [http://localhost:3000](http://localhost:3000).
 
 ### 4. Management

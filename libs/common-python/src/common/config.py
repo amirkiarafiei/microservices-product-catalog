@@ -22,10 +22,10 @@ class BaseServiceSettings(BaseSettings):
     DATABASE_URL: Optional[str] = None
 
     # Messaging
-    RABBITMQ_URL: str = "amqp://guest:guest@rabbitmq:5672"
+    RABBITMQ_URL: str = "amqp://guest:guest@localhost:5672"
 
     # Observability / Tracing
-    ZIPKIN_ENDPOINT: str = "http://zipkin:9411/api/v2/spans"
+    ZIPKIN_ENDPOINT: str = "http://localhost:9411/api/v2/spans"
     TRACING_ENABLED: bool = True
 
     # Security

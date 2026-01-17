@@ -39,14 +39,15 @@ migrate:
 
 backend:
 	@echo "Starting backend services..."
-	@cd services/api-gateway && uv run uvicorn gateway.main:app --port 8000 > ../../logs-gateway.log 2>&1 &
-	@cd services/identity-service && uv run uvicorn src.main:app --port 8001 > ../../logs-identity.log 2>&1 &
-	@cd services/characteristic-service && uv run uvicorn src.main:app --port 8002 > ../../logs-characteristic.log 2>&1 &
-	@cd services/specification-service && uv run uvicorn src.main:app --port 8003 > ../../logs-specification.log 2>&1 &
-	@cd services/pricing-service && uv run uvicorn pricing.main:app --port 8004 > ../../logs-pricing.log 2>&1 &
-	@cd services/offering-service && uv run uvicorn offering.main:app --port 8005 > ../../logs-offering.log 2>&1 &
-	@cd services/store-service && uv run uvicorn store.main:app --port 8006 > ../../logs-store.log 2>&1 &
-	@echo "Backend services are starting. Check logs-*.log for output."
+	@mkdir -p logs
+	@cd services/api-gateway && uv run uvicorn gateway.main:app --port 8000 > ../../logs/gateway.log 2>&1 &
+	@cd services/identity-service && uv run uvicorn src.main:app --port 8001 > ../../logs/identity.log 2>&1 &
+	@cd services/characteristic-service && uv run uvicorn src.main:app --port 8002 > ../../logs/characteristic.log 2>&1 &
+	@cd services/specification-service && uv run uvicorn src.main:app --port 8003 > ../../logs/specification.log 2>&1 &
+	@cd services/pricing-service && uv run uvicorn pricing.main:app --port 8004 > ../../logs/pricing.log 2>&1 &
+	@cd services/offering-service && uv run uvicorn offering.main:app --port 8005 > ../../logs/offering.log 2>&1 &
+	@cd services/store-service && uv run uvicorn store.main:app --port 8006 > ../../logs/store.log 2>&1 &
+	@echo "Backend services are starting. Check logs/ directory for output."
 
 frontend:
 	cd web-ui && npm run dev
@@ -54,11 +55,11 @@ frontend:
 dev: backend frontend
 
 clean-logs:
-	rm -f logs-*.log
+	rm -rf logs/
 
 stop:
 	@echo "Stopping backend services..."
-	@pkill -f "uvicorn" || true
+	@pkill -u $$USER -f "[u]vicorn" || true
 	@echo "Backend services stopped."
 
 status:
