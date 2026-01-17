@@ -2,6 +2,8 @@
 
 # Detect Docker Host from current context (fix for Docker Desktop / non-default sockets)
 export DOCKER_HOST ?= $(shell docker context inspect --format '{{.Endpoints.docker.Host}}' 2>/dev/null || echo "unix:///var/run/docker.sock")
+# Disable Ryuk (testcontainers reaper) to avoid "Mounts denied" errors with Docker Desktop on Linux
+export TESTCONTAINERS_RYUK_DISABLED=true
 
 .PHONY: help infra-up infra-down setup-keys migrate backend frontend dev stop status
 .PHONY: install-all-deps test-all lint-all
