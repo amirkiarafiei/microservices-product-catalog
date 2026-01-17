@@ -2,6 +2,8 @@ import asyncio
 import uuid
 from contextlib import asynccontextmanager
 from typing import List
+import asyncio
+import httpx
 
 from common.database.outbox import OutboxListener
 from common.exceptions import AppException, ErrorDetail, ErrorResponse
@@ -29,6 +31,24 @@ outbox_task = None
 async def lifespan(app: FastAPI):
     global outbox_task
     logger.info("Starting up pricing-service")
+
+    # Fetch JWT public key from Identity Service with retries
+    for attempt in range(3):
+        try:
+            identity_url = getattr(settings, 'IDENTITY_SERVICE_URL', 'http://localhost:8001')
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(f"{identity_url}/api/v1/auth/public-key")
+                if response.status_code == 200:
+                    data = response.json()
+                    settings.JWT_PUBLIC_KEY = data['public_key']
+                    logger.info("JWT public key fetched successfully from Identity Service")
+                    break
+                else:
+                    logger.error(f"Failed to fetch JWT public key: HTTP {response.status_code}")
+        except Exception as e:
+            logger.error(f"Error fetching JWT public key from Identity Service (attempt {attempt + 1}/3): {e}")
+            if attempt < 2:
+                await asyncio.sleep(2)  # Wait 2 seconds before retry
 
     # Initialize RabbitMQ Publisher for Outbox
     publisher = RabbitMQPublisher(settings.RABBITMQ_URL)
