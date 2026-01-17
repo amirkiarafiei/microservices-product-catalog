@@ -36,6 +36,7 @@ graph TD
 ```
 
 ## Tech Stack
+- **Language:** Python 3.13+
 - **Framework:** FastAPI
 - **Primary Store:** MongoDB (via `motor`)
 - **Search Engine:** Elasticsearch
@@ -55,6 +56,12 @@ The service reacts to the following events:
 - `OfferingPublished`: Triggers a full data composition and indexing.
 - `OfferingRetired`: Removes the offering from both stores.
 - `CharacteristicUpdated`, `SpecificationUpdated`, `PriceUpdated`: Finds all affected offerings and triggers a full re-composition for each to ensure data consistency.
+
+## Test Architecture
+To prevent event loop conflicts between `starlette.TestClient` and async drivers (`motor`, `aiohttp`, `aio-pika`), integration tests for this service use a fully asynchronous setup:
+- **Test Client:** `httpx.AsyncClient` replaces `TestClient`.
+- **Runner:** `pytest-asyncio` manages the event loop.
+- **Isolation:** Tests run in the same loop as the application code.
 
 ## Local Development
 

@@ -414,13 +414,13 @@ Here is your **Incremental Roadmap**.
 
 ## PART IV: FRONTEND (NextJS)
 
-### ### Phase 14: UI Scaffold & Authentication ✅
+### Phase 14: UI Scaffold & Authentication ✅
 
-**Status:** Implemented (Modern Next.js 14, Orange Branding, JWT Auth)
+**Status:** Implemented (Modern Next.js 16, React 19, Tailwind 4, JWT Auth)
 
 **Goal:** A working web app that can log in.
 
-*   ✅ Initialize NextJS 14+ with App Router + Tailwind CSS.
+*   ✅ Initialize NextJS 16+ with App Router + Tailwind CSS.
 *   ✅ Implement the **Auth Context**:
     *   ✅ Login page (`/login`) with username/password form.
     *   ✅ Store JWT in localStorage.
@@ -536,7 +536,7 @@ Here is your **Incremental Roadmap**.
 
 ## PART V: TESTING & DOCUMENTATION
 
-### Phase 18: Comprehensive Testing
+### Phase 18: Comprehensive Testing ✅ Implemented
 
 **Goal:** Ensure system reliability with proper test coverage.
 
@@ -559,6 +559,12 @@ Here is your **Incremental Roadmap**.
 *   **Verification:** 
     *   `pytest --cov` shows 80%+ coverage on domain code.
     *   All tests pass in CI pipeline.
+
+**Status Update (Jan 17, 2026):**
+*   **Full Test Suite Passing:** `make test-all` successfully runs 40+ tests across all backend services and the frontend.
+*   **Infrastructure:** Testcontainers (Postgres, Mongo, Elasticsearch, RabbitMQ) successfully integrated for isolated integration testing.
+*   **Async Testing Architecture:** Migrated `store-service` integration tests to use `httpx.AsyncClient` and `pytest-asyncio` to resolve event loop conflicts with `Motor` and `aiohttp`.
+*   **Frontend Testing:** Vitest configured for Next.js 16 components with passing tests.
 
 ### Phase 19: Documentation & Report
 
@@ -606,6 +612,26 @@ Here is your **Incremental Roadmap**.
         *   Open Kibana - show logs with correlation ID (20s).
     4.  **Conclusion** (20s).
 *   **Verification:** Video is under 5 minutes, covers all key features, audio is clear.
+
+### Phase 21: Frontend Polish & Fixes ✅ Completed
+
+**Goal:** Resolve remaining hydration issues and API field mismatches in the web UI.
+
+*   **Hydration Mismatch Resolution:**
+    *   Added `mounted` state to Header component to ensure SSR skeleton matches client hydration
+    *   Home page now properly redirects without showing loading state
+*   **API Field Standardization:**
+    *   Updated offering form to use `pricing_ids` instead of `price_ids` to match backend schema
+    *   Updated form validation and MultiSelect component bindings
+*   **Store Page Performance:**
+    *   Wrapped filters in useMemo to prevent re-creation on every render
+    *   Added useCallback for fetchOfferings, handleFilterChange, and handleLoadMore
+    *   Fixed infinite re-render loop that was causing page blinking
+*   **Status Update (Jan 17, 2026):**
+    *   All hydration errors resolved in Header and Home components
+    *   API field names now match backend schema across all forms
+    *   Store page performs smoothly without unnecessary re-renders
+    *   All pages accessible and functional
 
 ---
 

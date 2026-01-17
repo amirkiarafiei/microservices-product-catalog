@@ -23,7 +23,7 @@ graph TD
 ```
 
 ## Tech Stack
-- **Language:** Python 3.12+
+- **Language:** Python 3.13+
 - **Framework:** FastAPI
 - **ORM:** SQLAlchemy 2.0
 - **Messaging:** `aio-pika` (RabbitMQ)

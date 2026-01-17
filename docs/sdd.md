@@ -432,6 +432,7 @@ The system is composed of 6 autonomous services:
 3.  **Implementation Note (Resilience & Testability):**
     *   **Worker Isolation:** Camunda External Task Workers are implemented as separate modules (`saga_worker.py`) rather than being embedded in the FastAPI application lifespan. This prevents infinite polling loops from blocking the main event loop and ensures clean process termination during testing.
     *   **Test-Induced Deadlocks:** During development, embedded workers caused `pytest` to hang indefinitely because non-daemon worker threads remained active after tests finished. The fix involved decoupling workers from the API startup and neutralizing background listeners (like Outbox) during test execution.
+    *   **Async Testing Architecture:** Integration tests for the Store Service were refactored to use `httpx.AsyncClient` with `pytest-asyncio` instead of the synchronous `TestClient`. This prevents Event Loop conflicts when testing services that rely on asynchronous drivers like `Motor` (MongoDB) and `aiohttp` (Elasticsearch), ensuring that tests run in the same loop as the application code.
 
 2.  **Resilience:**
     *   **Circuit Breaker:** The API Gateway stops traffic to failing services to prevent cascading outages.
@@ -450,7 +451,7 @@ The system is composed of 6 autonomous services:
 ### 6. Technology Stack
 
 *   **Frontend:** NextJS 16.1+ (App Router), TailwindCSS 4, React 19.
-*   **Backend:** Python 3.12+, FastAPI, `uv` package manager.
+*   **Backend:** Python 3.13+, FastAPI, `uv` package manager.
 *   **Databases:** PostgreSQL 15 (Write), MongoDB/Elasticsearch (Read).
 *   **Messaging:** RabbitMQ (Events), Camunda 7 (Workflow).
 *   **Infrastructure:** Docker Compose (Dev), Kubernetes (Arch-ready).

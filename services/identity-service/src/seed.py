@@ -9,6 +9,7 @@ from .security import get_password_hash
 
 def seed_users():
     db: Session = SessionLocal()
+    print(f"DEBUG: seed_users connected to {db.get_bind().url}")
     try:
         # Check if users already exist
         admin = db.query(User).filter(User.username == "admin").first()
@@ -21,6 +22,8 @@ def seed_users():
                 role="ADMIN"
             )
             db.add(admin)
+        else:
+            print(f"DEBUG: Admin user already exists: {admin.username}, {admin.role}")
 
         user = db.query(User).filter(User.username == "user").first()
         if not user:

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { 
   ShoppingBag, 
@@ -30,16 +30,16 @@ function StoreContent() {
   const [skip, setSkip] = useState(0);
   const LIMIT = 12;
 
-  // Sync state from URL on mount
-  const initialFilters: FilterState = {
+  // Memoize filters from URL to prevent re-creation on every render
+  const initialFilters: FilterState = useMemo(() => ({
     q: searchParams.get("q") || "",
     min_price: searchParams.get("min_price") || "",
     max_price: searchParams.get("max_price") || "",
     channel: searchParams.get("channel") || "",
     characteristic: searchParams.getAll("characteristic") || []
-  };
+  }), [searchParams]);
 
-  const fetchOfferings = async (filters: FilterState, append = false) => {
+  const fetchOfferings = useCallback(async (filters: FilterState, append = false) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -71,9 +71,9 @@ function StoreContent() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [skip]);
 
-  const handleFilterChange = (newFilters: FilterState) => {
+  const handleFilterChange = useCallback((newFilters: FilterState) => {
     // Update URL params
     const params = new URLSearchParams();
     if (newFilters.q) params.set("q", newFilters.q);
@@ -86,11 +86,16 @@ function StoreContent() {
     router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
     
     fetchOfferings(newFilters);
-  };
+  }, [router, pathname, fetchOfferings]);
 
-  const handleLoadMore = () => {
+  const handleLoadMore = useCallback(() => {
     fetchOfferings(initialFilters, true);
-  };
+  }, [fetchOfferings, initialFilters]);
+
+  // Fetch offerings on mount and when filters change
+  useEffect(() => {
+    fetchOfferings(initialFilters);
+  }, [fetchOfferings, initialFilters]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
@@ -107,7 +112,7 @@ function StoreContent() {
         </div>
         <div className="bg-slate-100 px-4 py-2 rounded-xl border border-slate-200">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-            {isLoading ? "Updating..." : `Showing ${offerings.length} of ${total} results`}
+            {isLoading ? "Updating..." : `Showing ${offerings?.length || 0} of ${total} results`}
           </span>
         </div>
       </div>
@@ -135,19 +140,19 @@ function StoreContent() {
                 Try Again
               </button>
             </div>
-          ) : offerings.length === 0 && !isLoading ? (
+          ) : (!offerings || offerings.length === 0) && !isLoading ? (
             <div className="bg-slate-50 border border-dashed border-slate-200 rounded-3xl p-20 text-center flex flex-col items-center space-y-4">
               <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-2">
                 <ShoppingBag className="w-8 h-8 text-slate-200" />
               </div>
               <h3 className="text-xl font-bold text-slate-900">No offerings found</h3>
-              <p className="text-slate-500 font-medium max-w-xs mx-auto">Try adjusting your filters or keyword to find what you're looking for.</p>
+              <p className="text-slate-500 font-medium max-w-xs mx-auto">Try adjusting your filters or keyword to find what you&apos;re looking for.</p>
             </div>
           ) : (
             <div className="space-y-12">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                 <AnimatePresence mode="popLayout">
-                  {offerings.map((offering) => (
+                  {offerings?.map((offering) => (
                     <OfferingCard 
                       key={offering.id} 
                       offering={offering} 
@@ -161,7 +166,7 @@ function StoreContent() {
                 ))}
               </div>
 
-              {offerings.length < total && (
+              {(offerings?.length || 0) < total && (
                 <div className="flex justify-center pt-8 border-t border-slate-100">
                   <button
                     onClick={handleLoadMore}

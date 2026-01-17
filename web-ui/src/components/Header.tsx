@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,8 +19,35 @@ import { cn } from "@/lib/utils";
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const { user, logout, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    // Return a skeleton header during SSR to avoid hydration mismatch
+    return (
+      <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link href="/" className="flex items-center space-x-2 group">
+              <div className="w-8 h-8 bg-orange-brand rounded-lg flex items-center justify-center transition-transform group-hover:scale-110">
+                <Package className="text-white w-5 h-5" />
+              </div>
+              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600">
+                Catalog<span className="text-orange-brand">Hub</span>
+              </span>
+            </Link>
+            <nav className="hidden md:flex items-center space-x-4" />
+            <div className="hidden md:flex items-center space-x-4" />
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   if (!isAuthenticated && pathname === "/login") return null;
 
@@ -46,7 +73,7 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           {isAuthenticated && (
-            <nav className="hidden md:flex items-center space-x-1">
+            <nav className="hidden md:flex items-center space-x-4">
               {navItems.map((item) => (
                 <Link
                   key={item.name}

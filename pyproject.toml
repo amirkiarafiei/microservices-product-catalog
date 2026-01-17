@@ -4,11 +4,20 @@ version = "0.1.0"
 description = "TMF Product Catalog Microservices System"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "psycopg2-binary>=2.9.11",
+    "pymongo>=4.16.0",
+]
 
 [dependency-groups]
 dev = [
     "ruff>=0.1.0",
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "testcontainers>=4.9.0",
+    "httpx>=0.25.0",
+    "psycopg2-binary>=2.9.9",
+    "cryptography>=41.0.0",
 ]
 
 [tool.uv.workspace]

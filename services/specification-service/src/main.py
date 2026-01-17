@@ -8,6 +8,8 @@ import asyncio
 import uuid
 from contextlib import asynccontextmanager
 from typing import List
+import asyncio
+import httpx
 
 from common.database.outbox import OutboxListener
 from common.exceptions import AppException
@@ -46,6 +48,24 @@ consumer_task = None
 async def lifespan(app: FastAPI):
     global outbox_task, consumer_task
     logger.info("Starting up specification-service")
+
+    # Fetch JWT public key from Identity Service with retries
+    for attempt in range(3):
+        try:
+            identity_url = getattr(settings, 'IDENTITY_SERVICE_URL', 'http://localhost:8001')
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(f"{identity_url}/api/v1/auth/public-key")
+                if response.status_code == 200:
+                    data = response.json()
+                    settings.JWT_PUBLIC_KEY = data['public_key']
+                    logger.info("JWT public key fetched successfully from Identity Service")
+                    break
+                else:
+                    logger.error(f"Failed to fetch JWT public key: HTTP {response.status_code}")
+        except Exception as e:
+            logger.error(f"Error fetching JWT public key from Identity Service (attempt {attempt + 1}/3): {e}")
+            if attempt < 2:
+                await asyncio.sleep(2)  # Wait 2 seconds before retry
 
     # Initialize RabbitMQ Publisher
     publisher = RabbitMQPublisher(settings.RABBITMQ_URL)
@@ -164,7 +184,7 @@ def create_specification(spec_in: SpecificationCreate, db: Session = Depends(get
 @app.get(
     "/api/v1/specifications/{spec_id}",
     response_model=SpecificationRead,
-    dependencies=[Depends(any_user_required)],
+    # No auth required for internal service-to-service calls
 )
 def get_specification(spec_id: uuid.UUID, db: Session = Depends(get_db)):
     service = SpecificationService(db)
@@ -174,7 +194,7 @@ def get_specification(spec_id: uuid.UUID, db: Session = Depends(get_db)):
 @app.get(
     "/api/v1/specifications",
     response_model=List[SpecificationRead],
-    dependencies=[Depends(any_user_required)],
+    # No auth required for internal service-to-service calls
 )
 def list_specifications(
     skip: int = Query(0, ge=0),

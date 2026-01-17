@@ -8,6 +8,8 @@ import asyncio
 import uuid
 from contextlib import asynccontextmanager
 from typing import List
+import asyncio
+import httpx
 
 from common.database.outbox import OutboxListener
 from common.exceptions import AppException
@@ -45,16 +47,34 @@ async def lifespan(app: FastAPI):
     global outbox_task
     logger.info("Starting up characteristic-service")
 
+    # Fetch JWT public key from Identity Service with retries
+    for attempt in range(3):
+        try:
+            identity_url = getattr(settings, 'IDENTITY_SERVICE_URL', 'http://localhost:8001')
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(f"{identity_url}/api/v1/auth/public-key")
+                if response.status_code == 200:
+                    data = response.json()
+                    settings.JWT_PUBLIC_KEY = data['public_key']
+                    logger.info("JWT public key fetched successfully from Identity Service")
+                    break
+                else:
+                    logger.error(f"Failed to fetch JWT public key: HTTP {response.status_code}")
+        except Exception as e:
+            logger.error(f"Error fetching JWT public key from Identity Service (attempt {attempt + 1}/3): {e}")
+            if attempt < 2:
+                await asyncio.sleep(2)  # Wait 2 seconds before retry
+
     # Initialize RabbitMQ Publisher
     publisher = RabbitMQPublisher(settings.RABBITMQ_URL)
 
     # Initialize Outbox Listener
     # DSN for asyncpg (needs to be postgres:// instead of postgresql://)
-    dsn = (
-        settings.DATABASE_URL.replace("postgresql://", "postgres://")
-        if settings.DATABASE_URL
-        else None
-    )
+    # Also handle postgresql+psycopg2:// which SQLAlchemy might use
+    dsn = None
+    if settings.DATABASE_URL:
+        dsn = settings.DATABASE_URL.replace("postgresql+psycopg2://", "postgres://")
+        dsn = dsn.replace("postgresql://", "postgres://")
 
     if dsn:
         listener = OutboxListener(

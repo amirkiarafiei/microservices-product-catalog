@@ -27,7 +27,7 @@ const offeringSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
   specification_ids: z.array(z.string()),
-  price_ids: z.array(z.string()),
+  pricing_ids: z.array(z.string()),
   sales_channels: z.array(z.string()),
 });
 
@@ -63,7 +63,7 @@ export default function OfferingForm({ initialData, onSuccess }: OfferingFormPro
     mode: "onChange",
     defaultValues: initialData || {
       specification_ids: [],
-      price_ids: [],
+      pricing_ids: [],
       sales_channels: ["Online"],
     },
   });
@@ -91,6 +91,7 @@ export default function OfferingForm({ initialData, onSuccess }: OfferingFormPro
   }, []);
 
   const onSaveDraft = async (data: OfferingFormValues) => {
+    console.log('=== SAVE DRAFT DATA ===', JSON.stringify(data, null, 2));
     setIsLoading(true);
     try {
       if (isEdit) {
@@ -103,6 +104,7 @@ export default function OfferingForm({ initialData, onSuccess }: OfferingFormPro
       }
       if (onSuccess) onSuccess();
     } catch (error: any) {
+      console.error('Save draft error:', error);
       toast.error(error.message || `Failed to ${isEdit ? "update" : "save"} offering`);
     } finally {
       setIsLoading(false);
@@ -111,7 +113,7 @@ export default function OfferingForm({ initialData, onSuccess }: OfferingFormPro
 
   const onPublish = async (data: OfferingFormValues) => {
     // Basic frontend check for publish rules
-    if (data.specification_ids.length === 0 || data.price_ids.length === 0 || data.sales_channels.length === 0) {
+    if (data.specification_ids.length === 0 || data.pricing_ids.length === 0 || data.sales_channels.length === 0) {
       toast.error("Cannot publish: Needs at least 1 spec, 1 price, and 1 channel.");
       return;
     }
@@ -231,7 +233,7 @@ export default function OfferingForm({ initialData, onSuccess }: OfferingFormPro
             <div className="space-y-2">
               <label className="text-sm font-semibold text-slate-700">Pricing Plans</label>
               <Controller
-                name="price_ids"
+                name="pricing_ids"
                 control={control}
                 render={({ field }) => (
                   <MultiSelect

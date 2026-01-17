@@ -34,6 +34,7 @@ graph TD
 ```
 
 ## Tech Stack
+- **Language:** Python 3.13+
 - **Framework:** FastAPI
 - **Database:** PostgreSQL
 - **ORM:** SQLAlchemy

@@ -54,6 +54,13 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.username == form_data.username).first()
+    if user:
+        logger.info(f"DEBUG: Found user {user.username} with hash {user.password_hash}")
+        is_valid = verify_password(form_data.password, user.password_hash)
+        logger.info(f"DEBUG: Password check result: {is_valid} for input '{form_data.password}'")
+    else:
+        logger.info(f"DEBUG: User not found: {form_data.username}")
+
     if not user or not verify_password(form_data.password, user.password_hash):
         logger.warning(f"Failed login attempt for user: {form_data.username}")
         raise HTTPException(

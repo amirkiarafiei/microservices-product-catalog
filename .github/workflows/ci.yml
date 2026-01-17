@@ -1,0 +1,84 @@
+name: ci
+
+on:
+  create:
+    branches: ["release/**"]
+  workflow_dispatch:
+  schedule:
+    # nightly-ish
+    - cron: "0 2 * * *"
+
+jobs:
+  backend_frontend_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install backend deps (uv workspace)
+        run: uv sync --all-groups
+
+      - name: Backend tests (per package)
+        run: |
+          cd libs/common-python && uv run pytest tests -q
+          cd ../../services/api-gateway && uv run pytest tests -q
+          cd ../identity-service && uv run pytest tests -q
+          cd ../characteristic-service && uv run pytest tests -q
+          cd ../specification-service && uv run pytest tests -q
+          cd ../pricing-service && uv run pytest tests -q
+          cd ../offering-service && uv run pytest tests -q
+          cd ../store-service && uv run pytest tests -q
+
+      - name: Backend lint (ruff)
+        run: uv run ruff check .
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: web-ui/package-lock.json
+
+      - name: Frontend install
+        run: cd web-ui && npm ci
+
+      - name: Frontend lint
+        run: cd web-ui && npm run lint
+
+      - name: Frontend tests
+        run: cd web-ui && npm test
+
+      - name: Frontend build
+        run: cd web-ui && npm run build
+
+  e2e_saga:
+    # run on schedule or manually, skip on PR/push by default
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install backend deps (uv workspace)
+        run: uv sync --all-groups
+
+      - name: Run saga E2E tests
+        env:
+          # make docker more stable in CI
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+        run: uv run pytest tests/e2e -q
+

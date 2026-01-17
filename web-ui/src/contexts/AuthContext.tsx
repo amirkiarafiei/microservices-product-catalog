@@ -20,10 +20,32 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper to get initial state from localStorage (runs synchronously on first render)
+function getInitialToken(): string | null {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("token");
+  }
+  return null;
+}
+
+function getInitialUser(): User | null {
+  if (typeof window !== "undefined") {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        return JSON.parse(storedUser);
+      } catch {
+        return null;
+      }
+    }
+  }
+  return null;
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(getInitialUser);
+  const [token, setToken] = useState<string | null>(getInitialToken);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -38,21 +60,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [router]);
 
   useEffect(() => {
-    // Initialize auth state from localStorage
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-      apiClient.setToken(storedToken);
+    // Sync apiClient token on mount
+    if (token) {
+      apiClient.setToken(token);
     }
     
     // Set up unauthorized interceptor
     apiClient.setOnUnauthorized(logout);
-    
-    setIsLoading(false);
-  }, [logout]);
+  }, [logout, token]);
 
   const login = (newToken: string, username: string) => {
     const newUser = { username };

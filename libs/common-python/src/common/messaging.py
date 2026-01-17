@@ -93,16 +93,9 @@ class RabbitMQPublisher:
                 "messaging.system": "rabbitmq",
                 "messaging.destination": topic,
                 "messaging.destination_kind": "topic",
-                "messaging.message_id": event.event_id,
+                "messaging.message_id": str(event.event_id),
             },
         ):
-            await self.connect()
-
-            # Ensure exchange exists
-            exchange = await self.channel.declare_exchange(
-                "catalog.events", aio_pika.ExchangeType.TOPIC, durable=True
-            )
-
             # Build headers with correlation_id and trace context
             headers: Dict[str, Any] = {}
             if event.correlation_id:
@@ -121,6 +114,13 @@ class RabbitMQPublisher:
             attempt = 0
             while attempt < retries:
                 try:
+                    await self.connect()
+
+                    # Ensure exchange exists
+                    exchange = await self.channel.declare_exchange(
+                        "catalog.events", aio_pika.ExchangeType.TOPIC, durable=True
+                    )
+
                     await exchange.publish(message, routing_key=topic)
                     logger.debug(f"Published event {event.event_id} to {topic}")
                     return
