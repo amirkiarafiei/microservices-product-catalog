@@ -45,34 +45,35 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          {isAuthenticated && (
-            <nav className="hidden md:flex items-center space-x-4">
-              {navItems.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "px-4 py-2 rounded-full text-sm font-medium transition-all relative group",
-                    pathname.startsWith(item.href)
-                      ? "text-orange-brand"
-                      : "text-slate-600 hover:text-orange-brand hover:bg-orange-light"
-                  )}
-                >
-                  <span className="relative z-10 flex items-center space-x-2">
-                    <item.icon className="w-4 h-4" />
-                    <span>{item.name}</span>
-                  </span>
-                  {pathname.startsWith(item.href) && (
-                    <motion.div
-                      layoutId="nav-pill"
-                      className="absolute inset-0 bg-orange-light rounded-full z-0"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                    />
-                  )}
-                </Link>
-              ))}
-            </nav>
-          )}
+          <nav className={cn(
+            "hidden md:flex items-center space-x-4",
+            !isAuthenticated && "md:hidden"
+          )}>
+            {navItems.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={cn(
+                  "px-4 py-2 rounded-full text-sm font-medium transition-all relative group",
+                  pathname.startsWith(item.href)
+                    ? "text-orange-brand"
+                    : "text-slate-600 hover:text-orange-brand hover:bg-orange-light"
+                )}
+              >
+                <span className="relative z-10 flex items-center space-x-2">
+                  <item.icon className="w-4 h-4" />
+                  <span>{item.name}</span>
+                </span>
+                {pathname.startsWith(item.href) && (
+                  <motion.div
+                    layoutId="nav-pill"
+                    className="absolute inset-0 bg-orange-light rounded-full z-0"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+              </Link>
+            ))}
+          </nav>
 
           {/* User Section / Auth */}
           <div className="hidden md:flex items-center space-x-4">

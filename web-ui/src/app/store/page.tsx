@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { 
   ShoppingBag, 
@@ -30,16 +30,16 @@ function StoreContent() {
   const [skip, setSkip] = useState(0);
   const LIMIT = 12;
 
-  // Sync state from URL on mount
-  const initialFilters: FilterState = {
+  // Memoize filters from URL to prevent re-creation on every render
+  const initialFilters: FilterState = useMemo(() => ({
     q: searchParams.get("q") || "",
     min_price: searchParams.get("min_price") || "",
     max_price: searchParams.get("max_price") || "",
     channel: searchParams.get("channel") || "",
     characteristic: searchParams.getAll("characteristic") || []
-  };
+  }), [searchParams]);
 
-  const fetchOfferings = async (filters: FilterState, append = false) => {
+  const fetchOfferings = useCallback(async (filters: FilterState, append = false) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -71,9 +71,9 @@ function StoreContent() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [skip]);
 
-  const handleFilterChange = (newFilters: FilterState) => {
+  const handleFilterChange = useCallback((newFilters: FilterState) => {
     // Update URL params
     const params = new URLSearchParams();
     if (newFilters.q) params.set("q", newFilters.q);
@@ -86,16 +86,16 @@ function StoreContent() {
     router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
     
     fetchOfferings(newFilters);
-  };
+  }, [router, pathname, fetchOfferings]);
 
-  const handleLoadMore = () => {
+  const handleLoadMore = useCallback(() => {
     fetchOfferings(initialFilters, true);
-  };
+  }, [fetchOfferings, initialFilters]);
 
-  // Fetch offerings on mount
+  // Fetch offerings on mount and when filters change
   useEffect(() => {
     fetchOfferings(initialFilters);
-  }, []);
+  }, [fetchOfferings, initialFilters]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
