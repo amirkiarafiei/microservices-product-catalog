@@ -117,8 +117,9 @@ The frontend is a modern single-page application (SPA) that provides user interf
 - Specifications (multi-select dropdown)
   - Fetch: GET /api/v1/specifications
   - Display: Spec name
-- Prices (multi-select dropdown)
+- Pricing (multi-select dropdown)
   - Fetch: GET /api/v1/prices
+  - Field name: `pricing_ids` (matches backend API)
   - Display: Price name and value
 - Sales Channels (multi-select or checkboxes: Online, Retail, Partner)
 - Lifecycle Status (display only, starts as DRAFT)
@@ -135,7 +136,7 @@ The frontend is a modern single-page application (SPA) that provides user interf
 
 **Validation:**
 - Draft: Only name required
-- Publish: Name, at least 1 spec, 1 price, 1 sales channel required
+- Publish: Name, at least 1 spec, 1 price (pricing_ids), 1 sales channel required
 
 ---
 
@@ -367,7 +368,7 @@ User Action → Form Submit
 ├── src/
 │   ├── app/                      # Next.js App Router (v16)
 │   │   ├── layout.tsx            # Root layout with nav/header
-│   │   ├── page.tsx              # Home redirect
+│   │   ├── page.tsx              # Home redirect (authenticated → /builder, unauthenticated → /login)
 │   │   ├── login/
 │   │   │   └── page.tsx          # Login form
 │   │   ├── builder/
@@ -375,27 +376,31 @@ User Action → Form Submit
 │   │   ├── viewer/
 │   │   │   └── page.tsx          # Viewer with tabs
 │   │   └── store/
-│   │       ├── page.tsx          # Store catalog
-│   │       └── [id]/page.tsx     # Offering detail
+│   │       └── page.tsx          # Store catalog (public)
 │   │
 │   ├── components/               # Reusable UI components
-│   │   ├── Header.tsx
-│   │   ├── Tabs.tsx
-│   │   ├── CharacteristicForm.tsx
-│   │   ├── SpecificationForm.tsx
-│   │   ├── PricingForm.tsx
-│   │   ├── OfferingForm.tsx
-│   │   ├── DataTable.tsx
-│   │   ├── OfferingCard.tsx
-│   │   ├── FilterPanel.tsx
-│   │   └── Toast.tsx
+│   │   ├── Header.tsx            # Navigation header with mounted state for hydration safety
+│   │   ├── ui/
+│   │   │   ├── Tabs.tsx
+│   │   │   ├── FilterPanel.tsx
+│   │   │   ├── OfferingCard.tsx
+│   │   │   ├── OfferingDetail.tsx
+│   │   │   ├── Modal.tsx
+│   │   │   ├── MultiSelect.tsx
+│   │   │   └── ...
+│   │   └── forms/
+│   │       ├── CharacteristicForm.tsx
+│   │       ├── SpecificationForm.tsx
+│   │       ├── PricingForm.tsx
+│   │       └── OfferingForm.tsx     # Uses pricing_ids field
 │   │
 │   ├── lib/                      # Utilities
 │   │   ├── api-client.ts         # HTTP client wrapper
-│   │   └── auth.ts               # Auth helpers
+│   │   ├── hooks.ts              # Custom React hooks (useSagaPolling)
+│   │   └── utils.ts              # Helper functions (cn for classnames)
 │   │
 │   └── contexts/
-│       └── AuthContext.tsx       # Auth state provider
+│       └── AuthContext.tsx       # Auth state provider with JWT handling
 │
 ├── public/                       # Static assets
 ├── tailwind.config.ts
