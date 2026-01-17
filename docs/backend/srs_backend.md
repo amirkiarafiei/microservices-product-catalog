@@ -41,7 +41,7 @@ The backend system consists of six microservices orchestrated through an API Gat
 ### 2.2 Technology Stack Decisions
 
 **Core Technologies:**
-- Programming Language: Python 3.12+
+- Programming Language: Python 3.13+
 - Web Framework: FastAPI (async support, auto-documentation)
 - Package Management: uv (workspace management for monorepo)
 - Containerization: Docker
@@ -1026,7 +1026,7 @@ Delete Policy:**
 
 **Scope:** Single service in isolation (HTTP API)
 
-**Test Framework:** pytest + httpx (FastAPI TestClient) + WireMock
+**Test Framework:** pytest + httpx.AsyncClient + WireMock
 
 **Requirements:**
 - Test service REST API endpoints
@@ -1034,6 +1034,7 @@ Delete Policy:**
 - Verify request/response formats
 - Test error handling (4xx, 5xx)
 - Test authentication (valid/invalid JWT)
+- **Async Handling:** Use `httpx.AsyncClient` with `pytest-asyncio` for services using async drivers (Motor, AIOHTTP) to avoid event loop conflicts.
 
 **Example Test Cases:**
 - POST /specifications with valid data returns 201
@@ -1921,7 +1922,7 @@ The backend system is considered complete when:
 
 ### Appendix B: Technology Versions
 
-- Python: 3.12+
+- Python: 3.13+
 - FastAPI: 0.104+
 - PostgreSQL: 15+
 - MongoDB: 7+

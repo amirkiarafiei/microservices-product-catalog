@@ -33,6 +33,7 @@ graph TD
 ```
 
 ## Tech Stack
+- **Language:** Python 3.13+
 - **Framework:** FastAPI
 - **HTTP Client:** `httpx` (Asynchronous)
 - **Resilience:** Custom Async Circuit Breaker
