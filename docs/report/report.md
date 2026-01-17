@@ -550,6 +550,18 @@ Services are decomposed by **Bounded Context** following Domain-Driven Design:
 | **Store Query** | Sales Context | Read-optimized catalog | MongoDB + ES |
 | **API Gateway** | Cross-Cutting | Routing, security, resilience | - |
 
+**Admin Interfaces for Service Management:**
+
+<div align="center">
+  <img src="../../assets/screenshots/builder.png" alt="Service Builder - Creation Interface" width="55%" />
+  <p><em>Admin dashboard for creating characteristics, specifications, pricing, and offerings</em></p>
+</div>
+
+<div align="center">
+  <img src="../../assets/screenshots/viewer.png" alt="Service Viewer - Management Interface" width="55%" />
+  <p><em>Management dashboard for viewing, editing, and managing all domain entities</em></p>
+</div>
+
 ### 5.3 Design Patterns Applied
 
 #### 5.3.1 Transactional Outbox Pattern
@@ -607,6 +619,11 @@ flowchart LR
 **Problem:** Read and write operations have different requirements.
 
 **Solution:** Separate write model (PostgreSQL) from read model (MongoDB + Elasticsearch).
+
+<div align="center">
+  <img src="../../assets/screenshots/store.png" alt="Store Query - Read Model" width="50%" />
+  <p><em>Store Query Service: High-performance, denormalized product catalog with full-text search</em></p>
+</div>
 
 ```mermaid
 flowchart TB
@@ -951,6 +968,13 @@ make dev
 - Admin: `admin` / `admin`
 - User: `user` / `user`
 
+**Login Screen:**
+
+<div align="center">
+  <img src="../../assets/screenshots/login.png" alt="System Login" width="30%" />
+  <p><em>Authentication with JWT-based zero-trust security</em></p>
+</div>
+
 ---
 
 ## 9. Evaluation & Discussion
@@ -1091,7 +1115,7 @@ The system is **horizontally scalable**, **resilient to failures**, and follows 
 **End of Report**
 
 *TMF Product Catalog Microservices System*  
-*Advanced Software Architecture - BLM5126*  
+*Production-Grade Microservices Architecture*  
 *January 2026*
 
 </div>
