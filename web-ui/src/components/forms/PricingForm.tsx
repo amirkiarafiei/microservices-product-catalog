@@ -5,9 +5,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion } from "framer-motion";
-import { Loader2, DollarSign, Info } from "lucide-react";
+import { Loader2, DollarSign, Info, Save, Plus } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { toast } from "react-hot-toast";
+import { cn } from "@/lib/utils";
 
 const pricingSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -18,8 +19,14 @@ const pricingSchema = z.object({
 
 type PricingFormValues = z.infer<typeof pricingSchema>;
 
-export default function PricingForm() {
+interface PricingFormProps {
+  initialData?: PricingFormValues & { id: string };
+  onSuccess?: () => void;
+}
+
+export default function PricingForm({ initialData, onSuccess }: PricingFormProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const isEdit = !!initialData;
 
   const {
     register,
@@ -28,7 +35,7 @@ export default function PricingForm() {
     formState: { errors },
   } = useForm<PricingFormValues>({
     resolver: zodResolver(pricingSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       currency: "USD",
       unit: "per month",
       price_value: 0,
@@ -38,11 +45,17 @@ export default function PricingForm() {
   const onSubmit = async (data: PricingFormValues) => {
     setIsLoading(true);
     try {
-      await apiClient.post("/prices", data);
-      toast.success("Pricing plan created successfully!");
-      reset();
+      if (isEdit) {
+        await apiClient.put(`/prices/${initialData.id}`, data);
+        toast.success("Pricing plan updated successfully!");
+      } else {
+        await apiClient.post("/prices", data);
+        toast.success("Pricing plan created successfully!");
+        reset();
+      }
+      if (onSuccess) onSuccess();
     } catch (error: any) {
-      toast.error(error.message || "Failed to create pricing");
+      toast.error(error.message || `Failed to ${isEdit ? "update" : "create"} pricing`);
     } finally {
       setIsLoading(false);
     }
@@ -50,20 +63,22 @@ export default function PricingForm() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
+      initial={{ opacity: 0, x: isEdit ? 0 : 20 }}
       animate={{ opacity: 1, x: 0 }}
-      className="max-w-2xl mx-auto"
+      className={cn("max-w-2xl mx-auto", isEdit && "max-w-full")}
     >
-      <div className="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm">
-        <div className="flex items-center space-x-3 mb-8">
-          <div className="w-10 h-10 bg-orange-light rounded-lg flex items-center justify-center">
-            <DollarSign className="text-orange-brand w-6 h-6" />
+      <div className={cn("bg-white rounded-2xl p-8 border border-slate-100 shadow-sm", isEdit && "p-0 border-0 shadow-none")}>
+        {!isEdit && (
+          <div className="flex items-center space-x-3 mb-8">
+            <div className="w-10 h-10 bg-orange-light rounded-lg flex items-center justify-center">
+              <DollarSign className="text-orange-brand w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">New Pricing Plan</h2>
+              <p className="text-sm text-slate-500">Define monetary costs for your offerings</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-slate-900">New Pricing Plan</h2>
-            <p className="text-sm text-slate-500">Define monetary costs for your offerings</p>
-          </div>
-        </div>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-2">
@@ -141,8 +156,8 @@ export default function PricingForm() {
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               <>
-                <DollarSign className="w-5 h-5" />
-                <span>Create Pricing Plan</span>
+                {isEdit ? <Save className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                <span>{isEdit ? "Update" : "Create"} Pricing Plan</span>
               </>
             )}
           </motion.button>

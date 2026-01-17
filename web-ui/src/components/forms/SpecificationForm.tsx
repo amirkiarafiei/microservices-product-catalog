@@ -5,10 +5,11 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion } from "framer-motion";
-import { Loader2, Box, Info, RefreshCw } from "lucide-react";
+import { Loader2, Box, Info, RefreshCw, Save, Plus } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { toast } from "react-hot-toast";
 import MultiSelect from "@/components/ui/MultiSelect";
+import { cn } from "@/lib/utils";
 
 const specSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -24,10 +25,16 @@ interface Characteristic {
   unit_of_measure: string;
 }
 
-export default function SpecificationForm() {
+interface SpecificationFormProps {
+  initialData?: SpecFormValues & { id: string };
+  onSuccess?: () => void;
+}
+
+export default function SpecificationForm({ initialData, onSuccess }: SpecificationFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [characteristics, setCharacteristics] = useState<Characteristic[]>([]);
+  const isEdit = !!initialData;
 
   const {
     control,
@@ -37,7 +44,7 @@ export default function SpecificationForm() {
     formState: { errors },
   } = useForm<SpecFormValues>({
     resolver: zodResolver(specSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       characteristic_ids: [],
     },
   });
@@ -61,11 +68,17 @@ export default function SpecificationForm() {
   const onSubmit = async (data: SpecFormValues) => {
     setIsLoading(true);
     try {
-      await apiClient.post("/specifications", data);
-      toast.success("Specification created successfully!");
-      reset();
+      if (isEdit) {
+        await apiClient.put(`/specifications/${initialData.id}`, data);
+        toast.success("Specification updated successfully!");
+      } else {
+        await apiClient.post("/specifications", data);
+        toast.success("Specification created successfully!");
+        reset();
+      }
+      if (onSuccess) onSuccess();
     } catch (error: any) {
-      toast.error(error.message || "Failed to create specification");
+      toast.error(error.message || `Failed to ${isEdit ? "update" : "create"} specification`);
     } finally {
       setIsLoading(false);
     }
@@ -78,30 +91,33 @@ export default function SpecificationForm() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
+      initial={{ opacity: 0, x: isEdit ? 0 : 20 }}
       animate={{ opacity: 1, x: 0 }}
-      className="max-w-2xl mx-auto"
+      className={cn("max-w-2xl mx-auto", isEdit && "max-w-full")}
     >
-      <div className="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-orange-light rounded-lg flex items-center justify-center">
-              <Box className="text-orange-brand w-6 h-6" />
+      <div className={cn("bg-white rounded-2xl p-8 border border-slate-100 shadow-sm", isEdit && "p-0 border-0 shadow-none")}>
+        {!isEdit && (
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-orange-light rounded-lg flex items-center justify-center">
+                <Box className="text-orange-brand w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">New Specification</h2>
+                <p className="text-sm text-slate-500">Group characteristics into a technical requirement</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">New Specification</h2>
-              <p className="text-sm text-slate-500">Group characteristics into a technical requirement</p>
-            </div>
+            <button
+              onClick={fetchCharacteristics}
+              disabled={isFetching}
+              type="button"
+              className="p-2 text-slate-400 hover:text-orange-brand transition-colors rounded-lg hover:bg-orange-light"
+              title="Refresh characteristics"
+            >
+              <RefreshCw className={cn("w-4 h-4", isFetching && "animate-spin")} />
+            </button>
           </div>
-          <button
-            onClick={fetchCharacteristics}
-            disabled={isFetching}
-            className="p-2 text-slate-400 hover:text-orange-brand transition-colors rounded-lg hover:bg-orange-light"
-            title="Refresh characteristics"
-          >
-            <RefreshCw className={cn("w-4 h-4", isFetching && "animate-spin")} />
-          </button>
-        </div>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-2">
@@ -154,8 +170,8 @@ export default function SpecificationForm() {
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               <>
-                <Box className="w-5 h-5" />
-                <span>Create Specification</span>
+                {isEdit ? <Save className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                <span>{isEdit ? "Update" : "Create"} Specification</span>
               </>
             )}
           </motion.button>
@@ -163,9 +179,4 @@ export default function SpecificationForm() {
       </div>
     </motion.div>
   );
-}
-
-// Helper function locally since utils aren't shared yet
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
 }

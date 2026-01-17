@@ -126,6 +126,7 @@ flowchart LR
 | **Pricing** | Monetary definitions & Saga Locking | PostgreSQL | - |
 | **Offering** | Product bundles & Saga Orchestrator | PostgreSQL | - |
 | **Store Query** | High-performance catalog & Full-text search | - | Mongo + ES |
+| **Web UI** | Modern Management & Shopping Portal | - | Next.js 16 |
 
 ---
 
@@ -195,4 +196,8 @@ cd libs/common-python && uv run pytest tests -v
 - [x] **Phase 11:** API Gateway & Resilience
 - [x] **Phase 12:** Distributed Transactions (Camunda Saga)
 - [x] **Phase 13:** Observability (OTel + ELK)
-- [ ] **Phase 14-18:** Frontend (NextJS Implementation) - *Coming Next*
+- [x] **Phase 14:** UI Scaffold & Authentication (Next.js 16, Tailwind 4)
+- [x] **Phase 15:** Admin UI - The Builder (Create Entities)
+- [x] **Phase 16:** Admin UI - The Viewer (Manage Entities)
+- [ ] **Phase 17:** Customer UI - The Store (Browse Offerings)
+- [ ] **Phase 18:** Final Polish & Deployment

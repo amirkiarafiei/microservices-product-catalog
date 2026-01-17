@@ -15,12 +15,7 @@ import {
   Package
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from "@/lib/utils";
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);

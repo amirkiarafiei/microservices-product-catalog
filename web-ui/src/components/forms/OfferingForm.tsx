@@ -14,11 +14,13 @@ import {
   Send,
   Globe,
   Store,
-  Users
+  Users,
+  Plus
 } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { toast } from "react-hot-toast";
 import MultiSelect from "@/components/ui/MultiSelect";
+import { cn } from "@/lib/utils";
 
 const offeringSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -35,11 +37,17 @@ interface Entity {
   name: string;
 }
 
-export default function OfferingForm() {
+interface OfferingFormProps {
+  initialData?: OfferingFormValues & { id: string };
+  onSuccess?: () => void;
+}
+
+export default function OfferingForm({ initialData, onSuccess }: OfferingFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [specs, setSpecs] = useState<Entity[]>([]);
   const [prices, setPrices] = useState<Entity[]>([]);
+  const isEdit = !!initialData;
 
   const {
     control,
@@ -47,11 +55,11 @@ export default function OfferingForm() {
     handleSubmit,
     watch,
     reset,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm<OfferingFormValues>({
     resolver: zodResolver(offeringSchema),
     mode: "onChange",
-    defaultValues: {
+    defaultValues: initialData || {
       specification_ids: [],
       price_ids: [],
       sales_channels: ["Online"],
@@ -83,11 +91,17 @@ export default function OfferingForm() {
   const onSaveDraft = async (data: OfferingFormValues) => {
     setIsLoading(true);
     try {
-      await apiClient.post("/offerings", data);
-      toast.success("Offering draft saved!");
-      reset();
+      if (isEdit) {
+        await apiClient.put(`/offerings/${initialData.id}`, data);
+        toast.success("Offering updated!");
+      } else {
+        await apiClient.post("/offerings", data);
+        toast.success("Offering draft saved!");
+        reset();
+      }
+      if (onSuccess) onSuccess();
     } catch (error: any) {
-      toast.error(error.message || "Failed to save draft");
+      toast.error(error.message || `Failed to ${isEdit ? "update" : "save"} offering`);
     } finally {
       setIsLoading(false);
     }
@@ -103,14 +117,22 @@ export default function OfferingForm() {
     setIsLoading(true);
     const loadingToast = toast.loading("Initiating publication saga...");
     try {
-      // 1. Create the offering first
-      const offering = await apiClient.post<{ id: string }>("/offerings", data);
+      let offeringId = initialData?.id;
+      
+      // 1. Create or update the offering first
+      if (isEdit) {
+        await apiClient.put(`/offerings/${offeringId}`, data);
+      } else {
+        const offering = await apiClient.post<{ id: string }>("/offerings", data);
+        offeringId = offering.id;
+      }
       
       // 2. Trigger publish saga
-      await apiClient.post(`/offerings/${offering.id}/publish`);
+      await apiClient.post(`/offerings/${offeringId}/publish`);
       
       toast.success("Publication saga started! Check status in Viewer.", { id: loadingToast });
-      reset();
+      if (!isEdit) reset();
+      if (onSuccess) onSuccess();
     } catch (error: any) {
       toast.error(error.message || "Failed to initiate publication", { id: loadingToast });
     } finally {
@@ -129,29 +151,32 @@ export default function OfferingForm() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
+      initial={{ opacity: 0, x: isEdit ? 0 : 20 }}
       animate={{ opacity: 1, x: 0 }}
-      className="max-w-3xl mx-auto"
+      className={cn("max-w-3xl mx-auto", isEdit && "max-w-full")}
     >
-      <div className="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-orange-light rounded-lg flex items-center justify-center">
-              <ShoppingBag className="text-orange-brand w-6 h-6" />
+      <div className={cn("bg-white rounded-2xl p-8 border border-slate-100 shadow-sm", isEdit && "p-0 border-0 shadow-none")}>
+        {!isEdit && (
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-orange-light rounded-lg flex items-center justify-center">
+                <ShoppingBag className="text-orange-brand w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">New Product Offering</h2>
+                <p className="text-sm text-slate-500">Bundle specs and prices into a marketable product</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">New Product Offering</h2>
-              <p className="text-sm text-slate-500">Bundle specs and prices into a marketable product</p>
-            </div>
+            <button
+              onClick={fetchDependencies}
+              disabled={isFetching}
+              type="button"
+              className="p-2 text-slate-400 hover:text-orange-brand transition-colors rounded-lg hover:bg-orange-light"
+            >
+              <RefreshCw className={cn("w-4 h-4", isFetching && "animate-spin")} />
+            </button>
           </div>
-          <button
-            onClick={fetchDependencies}
-            disabled={isFetching}
-            className="p-2 text-slate-400 hover:text-orange-brand transition-colors rounded-lg hover:bg-orange-light"
-          >
-            <RefreshCw className={cn("w-4 h-4", isFetching && "animate-spin")} />
-          </button>
-        </div>
+        )}
 
         <form className="space-y-6">
           <div className="space-y-2">
@@ -272,7 +297,7 @@ export default function OfferingForm() {
               ) : (
                 <>
                   <Save className="w-5 h-5" />
-                  <span>Save Draft</span>
+                  <span>{isEdit ? "Update" : "Save Draft"}</span>
                 </>
               )}
             </motion.button>
@@ -290,7 +315,7 @@ export default function OfferingForm() {
               ) : (
                 <>
                   <Send className="w-5 h-5" />
-                  <span>Publish Now</span>
+                  <span>{isEdit ? "Update & Publish" : "Publish Now"}</span>
                 </>
               )}
             </motion.button>
@@ -299,8 +324,4 @@ export default function OfferingForm() {
       </div>
     </motion.div>
   );
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
 }

@@ -517,7 +517,7 @@ The frontend is complete when:
 2. ✅ Authentication flow works (login, token storage, logout)
 3. ✅ Builder page creates all 4 entity types
 4. ✅ Viewer page displays all entities with edit/delete
-5. ✅ Store page shows published offerings with search/filter
+5. ✅ Store page shows published offerings with search/filter (Implemented in Phase 17)
 6. ✅ Cross-service validation works (spec requires existing chars)
 7. ✅ Saga status polling implemented (publish offering)
 8. ✅ Loading and error states handled gracefully
@@ -528,7 +528,19 @@ The frontend is complete when:
 
 ---
 
-## 13. OPTIONAL ENHANCEMENTS (If Time Permits)
+## 13. IMPLEMENTATION DETAILS (Phase 16 Updates)
+
+### 13.1 Viewer Page Specifics
+- **Tabbed Interface:** Smooth transitions between entity types using `framer-motion`.
+- **Generic DataTable:** A reusable component with built-in client-side filtering, sorting, and pagination.
+- **Conditional Actions:**
+    - **Offerings:** Actions change based on `lifecycle_status` (Edit/Publish/Delete for Draft, Retire/View for Published).
+    - **Prices:** Edit/Delete disabled with a lock icon when a price is "Locked" by an active offering.
+- **Deep View Hierarchy:** Offering and Specification details show the full nested hierarchy (e.g., Specs → Characteristics) by fetching details on demand.
+
+---
+
+## 14. OPTIONAL ENHANCEMENTS (If Time Permits)
 
 - Real-time updates via WebSockets (when offerings published by others)
 - Advanced search with autocomplete suggestions

@@ -471,39 +471,38 @@ Here is your **Incremental Roadmap**.
 
 ---
 
-### Phase 16: The Viewer (Admin UI - Manage Entities)
+### ### Phase 16: The Viewer (Admin UI - Manage Entities) ✅
+
+**Status:** Implemented (Advanced management dashboard with status-aware actions)
 
 **Goal:** View, edit, and delete existing entities.
 
-*   Implement **Viewer Page** with 4 tabs:
-    *   **Tab 1: View Characteristics**
-        *   Table: Name, Value, Unit, Created Date.
-        *   Pagination (20 per page).
-        *   Search/filter by name.
-        *   Edit button → Modal with pre-filled form → PUT /api/v1/characteristics/{id}.
-        *   Delete button → Confirmation dialog → DELETE /api/v1/characteristics/{id}.
-        *   Handle "Cannot delete, used by specifications" error.
-    *   **Tab 2: View Specifications**
-        *   Table: Name, Characteristics (comma-separated), Created Date.
-        *   Click to expand characteristic details.
-        *   Edit and Delete with dependency error handling.
-    *   **Tab 3: View Prices**
-        *   Table: Name, Value, Unit, Currency, Status (Locked/Unlocked).
-        *   Lock icon with tooltip for locked prices.
-        *   Edit/Delete with lock error handling (423 Locked).
-    *   **Tab 4: View Offerings**
-        *   Table: Name, Lifecycle Status (badge), Published Date.
-        *   Filter by lifecycle status (All, Draft, Published, Retired).
-        *   Actions based on status:
-            *   DRAFT: Edit, Publish, Delete
-            *   PUBLISHED: Retire, View Details
-            *   RETIRED: View Details only
-        *   Detail modal showing full hierarchy.
-*   **Verification:** 
-    *   View all entity types.
-    *   Edit an entity → Changes reflected.
-    *   Delete with dependency → Error displayed.
-    *   Filter offerings by status.
+*   ✅ Implement **Viewer Page** with 4 tabs:
+    *   ✅ **Tab 1: View Characteristics**
+        *   ✅ Table: Name, Value, Unit, Created Date.
+        *   ✅ Pagination (20 per page).
+        *   ✅ Search/filter by name.
+        *   ✅ Edit button → Modal with pre-filled form → PUT /api/v1/characteristics/{id}.
+        *   ✅ Delete button → Confirmation dialog → DELETE /api/v1/characteristics/{id}.
+        *   ✅ Handle "Cannot delete, used by specifications" error.
+    *   ✅ **Tab 2: View Specifications**
+        *   ✅ Table: Name, Characteristics (comma-separated), Created Date.
+        *   ✅ Click to view full characteristic details in modal.
+        *   ✅ Edit and Delete with dependency error handling.
+    *   ✅ **Tab 3: View Prices**
+        *   ✅ Table: Name, Value, Unit, Currency, Status (Locked/Unlocked).
+        *   ✅ Lock icon for locked prices (those used by active offerings).
+        *   ✅ Edit/Delete disabled for locked prices.
+    *   ✅ **Tab 4: View Offerings**
+        *   ✅ Table: Name, Lifecycle Status (badge), Published Date.
+        *   ✅ Filter by lifecycle status.
+        *   ✅ Actions based on status:
+            *   ✅ DRAFT: Edit, Publish, Delete.
+            *   ✅ PUBLISHED: Retire, View Details.
+            *   ✅ RETIRED: View Details only.
+        *   ✅ Detail modal showing full hierarchy (Offering -> Specs -> Chars).
+
+---
 
 ### Phase 17: The Store & Saga Polling (Public UI)
 
