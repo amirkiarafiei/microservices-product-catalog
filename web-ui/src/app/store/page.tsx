@@ -141,7 +141,7 @@ function StoreContent() {
                 <ShoppingBag className="w-8 h-8 text-slate-200" />
               </div>
               <h3 className="text-xl font-bold text-slate-900">No offerings found</h3>
-              <p className="text-slate-500 font-medium max-w-xs mx-auto">Try adjusting your filters or keyword to find what you're looking for.</p>
+              <p className="text-slate-500 font-medium max-w-xs mx-auto">Try adjusting your filters or keyword to find what you&apos;re looking for.</p>
             </div>
           ) : (
             <div className="space-y-12">

@@ -58,7 +58,7 @@ export default function ViewerPage() {
     { id: "offering", name: "Offerings", icon: ShoppingBag },
   ];
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const endpoint = activeTab === "offering" ? "/offerings" : 
@@ -71,11 +71,11 @@ export default function ViewerPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [activeTab]);
 
   useEffect(() => {
     fetchData();
-  }, [activeTab]);
+  }, [fetchData]);
 
   const handleDelete = async () => {
     if (!deleteItem) return;
