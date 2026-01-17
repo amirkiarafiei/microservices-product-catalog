@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "TMF Product Catalog Microservices System"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "psycopg2-binary>=2.9.11",
+    "pymongo>=4.16.0",
+]
 
 [dependency-groups]
 dev = [

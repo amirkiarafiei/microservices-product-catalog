@@ -1016,6 +1016,10 @@ wheels = [
 name = "microservices-product-catalog"
 version = "0.1.0"
 source = { virtual = "." }
+dependencies = [
+    { name = "psycopg2-binary" },
+    { name = "pymongo" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -1029,6 +1033,10 @@ dev = [
 ]
 
 [package.metadata]
+requires-dist = [
+    { name = "psycopg2-binary", specifier = ">=2.9.11" },
+    { name = "pymongo", specifier = ">=4.16.0" },
+]
 
 [package.metadata.requires-dev]
 dev = [

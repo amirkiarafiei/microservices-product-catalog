@@ -6,7 +6,7 @@ export DOCKER_HOST ?= $(shell docker context inspect --format '{{.Endpoints.dock
 export TESTCONTAINERS_RYUK_DISABLED=true
 
 .PHONY: help infra-up infra-down setup-keys migrate backend frontend dev stop status
-.PHONY: install-all-deps test-all lint-all
+.PHONY: install-all-deps test-all lint-all clean-db seed-data
 
 help:
 	@echo "TMF Product Catalog Microservices - Management"
@@ -18,6 +18,10 @@ help:
 	@echo "First-Time Setup (Run once):"
 	@echo "  make setup-keys    - Generate RSA keys for JWT"
 	@echo "  make migrate       - Run database migrations for all services"
+	@echo ""
+	@echo "Database Commands:"
+	@echo "  make clean-db      - Clean all databases (PostgreSQL, MongoDB, Elasticsearch, RabbitMQ)"
+	@echo "  make seed-data     - Populate databases with sample entities"
 	@echo ""
 	@echo "Development Commands:"
 	@echo "  make backend       - Start all 7 backend services in background"
@@ -45,6 +49,12 @@ setup-keys:
 
 migrate:
 	python scripts/migrate.py upgrade head
+
+clean-db:
+	python scripts/clean_databases.py
+
+seed-data:
+	python scripts/seed_data.py
 
 # --- Tooling / Quality ---
 install-all-deps:
