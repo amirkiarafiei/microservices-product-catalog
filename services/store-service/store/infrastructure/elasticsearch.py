@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from elasticsearch import AsyncElasticsearch
@@ -14,7 +15,27 @@ class ElasticsearchClient:
     async def init_index(self):
         """
         Initializes the index with mapping if it doesn't exist.
+        Retries connection with exponential backoff if ES is not ready.
         """
+        max_retries = 5
+        retry_delay = 2  # seconds
+        
+        for attempt in range(max_retries):
+            try:
+                exists = await self.client.indices.exists(index=self.index)
+                break
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    logger.warning(
+                        f"Elasticsearch not ready (attempt {attempt + 1}/{max_retries}): {e}. "
+                        f"Retrying in {retry_delay}s..."
+                    )
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    logger.error(f"Failed to connect to Elasticsearch after {max_retries} attempts")
+                    raise
+        
         exists = await self.client.indices.exists(index=self.index)
         if not exists:
             mapping = {

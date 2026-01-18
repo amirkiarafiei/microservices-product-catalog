@@ -90,6 +90,8 @@ lint-all:
 
 backend:
 	@echo "Starting backend services..."
+	@echo "⏳ Waiting for infrastructure to be ready..."
+	@python scripts/wait_for_infra.py || (echo "❌ Infrastructure not ready. Run 'make infra-up' first." && exit 1)
 	@mkdir -p logs
 	@cd services/api-gateway && uv run uvicorn gateway.main:app --port 8000 > ../../logs/gateway.log 2>&1 &
 	@cd services/identity-service && uv run uvicorn src.main:app --port 8001 > ../../logs/identity.log 2>&1 &
