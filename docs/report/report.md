@@ -23,7 +23,7 @@
 
 **GitHub Repository:** [https://github.com/amirkiarafiei/microservices-product-catalog](https://github.com/amirkiarafiei/microservices-product-catalog)
 
-**Demo Video:** {to be shared}
+**Demo Video (Youtube):** [https://youtu.be/hnD_BsCAwN0](https://youtu.be/hnD_BsCAwN0)
 
 **Date:** January 2026
 
