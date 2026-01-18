@@ -148,6 +148,10 @@ def start_elasticsearch():
 
     image = os.getenv("TESTCONTAINERS_ELASTIC_IMAGE", "docker.elastic.co/elasticsearch/elasticsearch:8.11.1")
     container = ElasticSearchContainer(image)
+    # Tune for CI/Learning environments where memory might be tight
+    container.with_env("discovery.type", "single-node")
+    container.with_env("xpack.security.enabled", "false")
+    container.with_env("ES_JAVA_OPTS", "-Xms512m -Xmx512m")
     container.start()
 
     # testcontainers returns something like http://host:port

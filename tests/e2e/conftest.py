@@ -140,6 +140,7 @@ def e2e_ctx() -> Generator[E2EContext, None, None]:
         base_env["JWT_PUBLIC_KEY"] = public_key
         base_env["RABBITMQ_URL"] = rmq.amqp_url
         base_env["CAMUNDA_URL"] = cam.url
+        base_env["IDENTITY_SERVICE_URL"] = urls["identity"]
 
         # Identity needs keys
         identity_env = base_env.copy()
@@ -246,7 +247,7 @@ def start_worker(e2e_ctx):
         if kind == "pricing":
             return _start_process(
                 "worker_pricing",
-                ["uv", "run", "python", "-c", "from saga_worker import run_pricing_worker; run_pricing_worker()"],
+                ["uv", "run", "python", "-u", "-c", "from pricing.saga_worker import run_pricing_worker; run_pricing_worker()"],
                 project_root / "services/pricing-service",
                 env,
                 log_dir,
@@ -254,7 +255,7 @@ def start_worker(e2e_ctx):
         if kind == "spec":
             return _start_process(
                 "worker_spec",
-                ["uv", "run", "python", "-c", "from saga_worker import run_specification_worker; run_specification_worker()"],
+                ["uv", "run", "python", "-u", "-c", "from src.saga_worker import run_specification_worker; run_specification_worker()"],
                 project_root / "services/specification-service",
                 env,
                 log_dir,
@@ -262,7 +263,7 @@ def start_worker(e2e_ctx):
         if kind == "store":
             return _start_process(
                 "worker_store",
-                ["uv", "run", "python", "-c", "from store.saga_worker import run_store_worker; run_store_worker()"],
+                ["uv", "run", "python", "-u", "-c", "from store.saga_worker import run_store_worker; run_store_worker()"],
                 project_root / "services/store-service",
                 env,
                 log_dir,
@@ -270,7 +271,7 @@ def start_worker(e2e_ctx):
         if kind == "offering":
             return _start_process(
                 "worker_offering",
-                ["uv", "run", "python", "-c", "from offering.saga_worker import run_offering_worker; run_offering_worker()"],
+                ["uv", "run", "python", "-u", "-c", "from offering.saga_worker import run_offering_worker; run_offering_worker()"],
                 project_root / "services/offering-service",
                 env,
                 log_dir,

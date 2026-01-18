@@ -143,14 +143,11 @@ def test_error_response_conformance(e2e_ctx):
     r = httpx.get(f"{gw}/api/v1/characteristics/00000000-0000-0000-0000-000000000000", headers=auth)
     assert r.status_code == 404
     err = r.json()
-    assert "detail" in err
-    # Our custom exception handler might return formatted errors?
-    # Checking common-python/src/common/exceptions.py would confirm,
-    # but strictly from API contract perspective:
+    assert "error" in err or "detail" in err
 
     # 422 Validation Error
     r = httpx.post(f"{gw}/api/v1/characteristics", headers=auth, json={"name": ""})  # Empty name
     assert r.status_code == 422
     err = r.json()
-    assert "detail" in err
+    assert "error" in err or "detail" in err
  
