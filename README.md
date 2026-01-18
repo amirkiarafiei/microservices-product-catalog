@@ -1,6 +1,6 @@
 # TMF Product Catalog Microservices System
 
-[![Tests: 108](https://img.shields.io/badge/Tests-108%20passing-brightgreen.svg)](#testing)
+[![Tests: 120+](https://img.shields.io/badge/Tests-120%2B%20passing-brightgreen.svg)](#testing)
 [![Code: 14.2K LOC](https://img.shields.io/badge/Code-14.2K%20LOC-informational.svg)](#project-statistics)
 [![Documentation](https://img.shields.io/badge/Docs-5.7K%20lines-blue.svg)](#project-documentation)
 [![View Code Wiki](https://www.gstatic.com/_/boq-sdlc-agents-ui/_/r/YUi5dj2UWvE.svg)](https://codewiki.google/github.com/amirkiarafiei/microservices-product-catalog)
@@ -31,6 +31,7 @@ A cloud-native, event-driven microservices platform for managing telecommunicati
 ## Table of Contents
 
 - [TMF Product Catalog Microservices System](#tmf-product-catalog-microservices-system)
+  - [Screenshots](#screenshots)
   - [Table of Contents](#table-of-contents)
   - [🚀 Quick Start (Automated)](#-quick-start-automated)
     - [1. Infrastructure](#1-infrastructure)
@@ -264,9 +265,15 @@ flowchart LR
 
 ### Testing
 
-We maintain a high-quality bar with **108 tests** across the suite:
+We maintain a high-quality bar with **120+ tests** across the suite:
 
 ```bash
+# Run all tests (Unit + Integration + Component + E2E)
+make test-all
+
+# Run E2E tests (requires Docker)
+make test-e2e
+
 # Run tests for a specific service
 cd services/pricing-service && uv run pytest tests -v
 
