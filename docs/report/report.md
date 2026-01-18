@@ -893,40 +893,67 @@ graph TB
 
 | Level | Scope | Tools | Count |
 |-------|-------|-------|-------|
-| **Unit** | Domain logic, business rules | pytest, unittest.mock | ~70 |
-| **Integration** | Database, external services | pytest, testcontainers | ~25 |
-| **Component** | Full service API | httpx.AsyncClient | ~10 |
-| **E2E** | Saga workflows | pytest + live services | ~3 |
+| **Unit** | Domain logic, business rules | pytest, unittest.mock | 70+ |
+| **Integration** | Database, external services | pytest, testcontainers | 30+ |
+| **Component** | Full service API | httpx.AsyncClient | 12+ |
+| **E2E** | Saga workflows, API contracts, security | pytest + testcontainers | 10 |
 
 ### 7.2 Test Results
 
 ```
-Total Test Functions: 108
+Total Test Functions: 120+
 
 By Service:
-├── common-python:        15 tests ✓
-├── characteristic-service: 18 tests ✓
-├── specification-service: 20 tests ✓
-├── pricing-service:      22 tests ✓
-├── offering-service:     15 tests ✓
-├── store-service:        12 tests ✓
-└── e2e:                   6 tests ✓
+├── common-python:            15 tests ✓
+├── characteristic-service:   18 tests ✓
+├── specification-service:    20 tests ✓
+├── pricing-service:          22 tests ✓
+├── offering-service:         15 tests ✓
+├── store-service:            12 tests ✓
+├── identity-service:          8 tests ✓
+└── e2e (Phase 21):           10 tests ✓
+   ├── test_happy_path_saga                    1 test ✓
+   ├── test_compensation_path_saga             1 test ✓
+   ├── test_advanced_contracts                 2 tests ✓
+   ├── test_api_contracts                      4 tests ✓
+   └── test_service_security                   2 tests ✓
 ```
 
-**Sample Test Output:**
+**E2E Test Suite (Phase 21):**
 ```
 ========================= test session starts =========================
-platform linux -- Python 3.13.1, pytest-8.3.5
-collected 22 items
+platform linux -- Python 3.13.3, pytest-9.0.2
+collected 10 items
 
-tests/unit/test_pricing_domain.py::test_create_price_valid PASSED
-tests/unit/test_pricing_domain.py::test_price_lock PASSED
-tests/unit/test_pricing_domain.py::test_price_unlock PASSED
-tests/integration/test_pricing_repository.py::test_create_and_retrieve PASSED
-tests/component/test_pricing_api.py::test_crud_operations PASSED
+tests/e2e/test_advanced_contracts.py::
+  test_pagination_and_robust_contracts PASSED
+  test_error_response_conformance PASSED
 
-========================= 22 passed in 4.52s =========================
+tests/e2e/test_api_contracts.py::
+  test_characteristic_contract PASSED
+  test_specification_contract PASSED
+  test_pricing_contract PASSED
+  test_offering_contract PASSED
+
+tests/e2e/test_compensation_path_saga.py::
+  test_compensation_unlocks_and_reverts PASSED
+
+tests/e2e/test_happy_path_saga.py::
+  test_happy_path_publish_and_store_visibility PASSED
+
+tests/e2e/test_service_security.py::
+  test_zero_trust_direct_access PASSED
+  test_gateway_enforces_auth PASSED
+
+========================= 10 passed in 103.86s =========================
 ```
+
+**Test Coverage Highlights (Phase 21):**
+- ✅ **Happy Path**: Full workflow from Create Characteristic → Specification → Price → Offering → Publish → Store Visibility (Saga orchestration verified)
+- ✅ **Compensation Path**: Saga failure triggers correct rollback (prices unlocked, offering reverts to DRAFT)
+- ✅ **API Contracts**: Recursive OpenAPI schema validation against all 7 service specifications
+- ✅ **Zero Trust Security**: Direct service access validated with token verification; JWT signature validation enforced
+- ✅ **Infrastructure**: Testcontainers orchestrates 5 ephemeral containers (PostgreSQL, MongoDB, Elasticsearch, RabbitMQ, Camunda)
 
 ---
 
