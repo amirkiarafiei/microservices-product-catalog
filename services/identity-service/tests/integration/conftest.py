@@ -30,8 +30,8 @@ def infra(jwt_keys):
 @pytest.fixture(scope="session", autouse=True)
 def configure_db(infra):
     # Rebuild engine/session in identity database module to point at container
-    import src.database as db_module  # noqa: E402
-    import src.seed as seed_module  # noqa: E402
+    import identity.database as db_module  # noqa: E402
+    import identity.seed as seed_module  # noqa: E402
 
     db_module.engine = create_engine(infra["pg"].url)
     db_module.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db_module.engine)
@@ -46,7 +46,7 @@ def configure_db(infra):
 
 @pytest.fixture
 def client(infra):
-    from src.main import app
+    from identity.main import app
 
     with TestClient(app) as c:
         yield c

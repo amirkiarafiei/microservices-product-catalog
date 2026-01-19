@@ -1,6 +1,6 @@
 import uuid
 
-from src.infrastructure.models import CachedCharacteristicORM
+from specification.infrastructure.models import CachedCharacteristicORM
 
 
 def test_create_and_get_specification(client, db_session):

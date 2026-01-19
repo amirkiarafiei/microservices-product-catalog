@@ -12,11 +12,11 @@ from sqlalchemy.orm import sessionmaker
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 sys.path.insert(0, BASE_DIR)
 
-import src.infrastructure.database as db_module  # noqa: E402
-import src.main as main_module  # noqa: E402
-from src.config import settings  # noqa: E402
-from src.infrastructure.database import Base, get_db  # noqa: E402
-from src.main import admin_required, any_user_required, app  # noqa: E402
+import characteristic.infrastructure.database as db_module  # noqa: E402
+import characteristic.main as main_module  # noqa: E402
+from characteristic.config import settings  # noqa: E402
+from characteristic.infrastructure.database import Base, get_db  # noqa: E402
+from characteristic.main import admin_required, any_user_required, app  # noqa: E402
 
 
 @pytest.fixture(scope="session")

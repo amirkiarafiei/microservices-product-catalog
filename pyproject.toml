@@ -5,6 +5,7 @@ description = "TMF Product Catalog Microservices System"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "common-python",
     "psycopg2-binary>=2.9.11",
     "pymongo>=4.16.0",
 ]
@@ -18,10 +19,24 @@ dev = [
     "httpx>=0.25.0",
     "psycopg2-binary>=2.9.9",
     "cryptography>=41.0.0",
+    "motor>=3.7.1",
+    "redis>=7.1.0",
+    "pydantic-settings>=2.12.0",
+    "sentry-sdk>=2.49.0",
+    "pika>=1.3.2",
+    "opentelemetry-api>=1.39.1",
+    "opentelemetry-sdk>=1.39.1",
+    "opentelemetry-exporter-otlp>=1.15.0",
+    "opentelemetry-instrumentation-fastapi>=0.60b1",
+    "opentelemetry-instrumentation-logging>=0.60b1",
+    "common-python",
 ]
 
 [tool.uv.workspace]
 members = ["services/*", "libs/*"]
+
+[tool.uv.sources]
+common-python = { workspace = true }
 
 [tool.uv]
 managed = true

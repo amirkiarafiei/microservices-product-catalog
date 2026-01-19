@@ -4,10 +4,10 @@ import uuid
 
 import aio_pika
 import pytest
-from src.application.schemas import CharacteristicCreate
-from src.config import settings
-from src.domain.models import UnitOfMeasure
-from src.infrastructure.models import OutboxORM
+from characteristic.application.schemas import CharacteristicCreate
+from characteristic.config import settings
+from characteristic.domain.models import UnitOfMeasure
+from characteristic.infrastructure.models import OutboxORM
 
 
 @pytest.mark.asyncio

@@ -65,20 +65,22 @@ install-all-deps:
 
 test-all:
 	@echo "Running backend tests (per package)..."
-	@cd libs/common-python && uv run pytest tests -q
-	@cd services/api-gateway && uv run pytest tests -q
-	@cd services/identity-service && uv run pytest tests -q
-	@cd services/characteristic-service && uv run pytest tests -q
-	@cd services/specification-service && uv run pytest tests -q
-	@cd services/pricing-service && uv run pytest tests -q
-	@cd services/offering-service && uv run pytest tests -q
-	@cd services/store-service && uv run pytest tests -q
+	@cd libs/common-python && uv run python -m pytest tests -q
+	@cd services/api-gateway && uv run python -m pytest tests -q
+	@cd services/identity-service && uv run python -m pytest tests -q
+	@cd services/characteristic-service && uv run python -m pytest tests -q
+	@cd services/specification-service && uv run python -m pytest tests -q
+	@cd services/pricing-service && uv run python -m pytest tests -q
+	@cd services/offering-service && uv run python -m pytest tests -q
+	@cd services/store-service && uv run python -m pytest tests -q
 	@echo "Running frontend tests..."
 	@cd web-ui && npm test
+	@echo "Running End-to-End tests..."
+	@$(MAKE) test-e2e
 
 test-e2e:
 	@echo "Running End-to-End tests (requires Docker)..."
-	@uv run pytest tests/e2e
+	@uv run python -m pytest tests/e2e -q
 
 lint-all:
 	@echo "Running backend lint (ruff)..."
@@ -94,9 +96,9 @@ backend:
 	@python scripts/wait_for_infra.py || (echo "❌ Infrastructure not ready. Run 'make infra-up' first." && exit 1)
 	@mkdir -p logs
 	@cd services/api-gateway && uv run uvicorn gateway.main:app --port 8000 > ../../logs/gateway.log 2>&1 &
-	@cd services/identity-service && uv run uvicorn src.main:app --port 8001 > ../../logs/identity.log 2>&1 &
-	@cd services/characteristic-service && uv run uvicorn src.main:app --port 8002 > ../../logs/characteristic.log 2>&1 &
-	@cd services/specification-service && uv run uvicorn src.main:app --port 8003 > ../../logs/specification.log 2>&1 &
+	@cd services/identity-service && uv run uvicorn identity.main:app --port 8001 > ../../logs/identity.log 2>&1 &
+	@cd services/characteristic-service && uv run uvicorn characteristic.main:app --port 8002 > ../../logs/characteristic.log 2>&1 &
+	@cd services/specification-service && uv run uvicorn specification.main:app --port 8003 > ../../logs/specification.log 2>&1 &
 	@cd services/pricing-service && uv run uvicorn pricing.main:app --port 8004 > ../../logs/pricing.log 2>&1 &
 	@cd services/offering-service && uv run uvicorn offering.main:app --port 8005 > ../../logs/offering.log 2>&1 &
 	@cd services/store-service && uv run uvicorn store.main:app --port 8006 > ../../logs/store.log 2>&1 &
@@ -104,7 +106,7 @@ backend:
 	@sleep 8
 	@echo "Starting saga workers..."
 	@cd services/pricing-service && uv run python -c "from pricing.saga_worker import run_pricing_worker; run_pricing_worker()" > ../../logs/pricing-worker.log 2>&1 &
-	@cd services/specification-service && uv run python -c "from src.saga_worker import run_specification_worker; run_specification_worker()" > ../../logs/specification-worker.log 2>&1 &
+	@cd services/specification-service && uv run python -c "from specification.saga_worker import run_specification_worker; run_specification_worker()" > ../../logs/specification-worker.log 2>&1 &
 	@cd services/store-service && uv run python -c "from store.saga_worker import run_store_worker; run_store_worker()" > ../../logs/store-worker.log 2>&1 &
 	@cd services/offering-service && uv run python -c "from offering.saga_worker import run_offering_worker; run_offering_worker()" > ../../logs/offering-worker.log 2>&1 &
 	@echo "Backend services and saga workers are starting. Check logs/ directory for output."

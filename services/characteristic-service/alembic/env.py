@@ -1,5 +1,5 @@
 from common.database.migrations import run_migrations
-from src.infrastructure.models import Base
+from characteristic.infrastructure.models import Base
 
 # This is the MetaData object of your models
 target_metadata = Base.metadata

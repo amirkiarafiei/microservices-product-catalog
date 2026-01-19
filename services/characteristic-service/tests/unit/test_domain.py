@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from src.domain.models import Characteristic, UnitOfMeasure
+from characteristic.domain.models import Characteristic, UnitOfMeasure
 
 
 def test_characteristic_creation():

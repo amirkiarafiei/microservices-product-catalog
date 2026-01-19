@@ -3,10 +3,10 @@ from unittest.mock import MagicMock
 
 import pytest
 from common.exceptions import ConflictError, NotFoundError
-from src.application.schemas import CharacteristicCreate, CharacteristicUpdate
-from src.application.service import CharacteristicService
-from src.domain.models import UnitOfMeasure
-from src.infrastructure.models import CharacteristicORM
+from characteristic.application.schemas import CharacteristicCreate, CharacteristicUpdate
+from characteristic.application.service import CharacteristicService
+from characteristic.domain.models import UnitOfMeasure
+from characteristic.infrastructure.models import CharacteristicORM
 
 
 @pytest.fixture

@@ -3,8 +3,8 @@ from unittest.mock import MagicMock
 
 import pytest
 from common.exceptions import AppException
-from src.application.schemas import SpecificationCreate
-from src.application.service import SpecificationService
+from specification.application.schemas import SpecificationCreate
+from specification.application.service import SpecificationService
 
 
 def _db_with_cached_ids(existing_ids: list[uuid.UUID]) -> MagicMock:

@@ -1,6 +1,6 @@
-from src.domain.models import UnitOfMeasure
-from src.infrastructure.models import CharacteristicORM
-from src.infrastructure.repository import CharacteristicRepository
+from characteristic.domain.models import UnitOfMeasure
+from characteristic.infrastructure.models import CharacteristicORM
+from characteristic.infrastructure.repository import CharacteristicRepository
 
 
 def test_repo_create_and_get(db_session):

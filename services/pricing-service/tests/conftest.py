@@ -6,12 +6,10 @@ import pytest
 from common.security import UserContext
 from fastapi.testclient import TestClient
 
-# Add src to path so we can import it
+# Add service root to path so we can import pricing
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
-COMMON_DIR = os.path.abspath(os.path.join(BASE_DIR, "../../libs/common-python/src"))
-sys.path = [p for p in sys.path if not p.endswith("/src")]
-sys.path.insert(0, BASE_DIR)
-sys.path.insert(0, COMMON_DIR)
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
 
 import pricing.main as main_module  # noqa: E402
 from pricing.infrastructure.database import get_db  # noqa: E402

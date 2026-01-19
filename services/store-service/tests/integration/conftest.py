@@ -47,7 +47,7 @@ async def configure_clients(infra):
     except Exception as e:
         print(f"Warning: init_index failed: {e}")
 
-    # Update store.main module-level references (it imported the old instances)
+    # Update src.main module-level references (it imported the old instances)
     import store.main as main_mod  # noqa: E402
 
     main_mod.es_client = es_mod.es_client

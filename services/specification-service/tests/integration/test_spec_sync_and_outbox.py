@@ -1,10 +1,10 @@
 import uuid
 
 import pytest
-from src.application.consumers import CharacteristicConsumer
-from src.application.schemas import SpecificationCreate
-from src.application.service import SpecificationService
-from src.infrastructure.models import CachedCharacteristicORM, OutboxORM
+from specification.application.consumers import CharacteristicConsumer
+from specification.application.schemas import SpecificationCreate
+from specification.application.service import SpecificationService
+from specification.infrastructure.models import CachedCharacteristicORM, OutboxORM
 
 
 @pytest.mark.asyncio

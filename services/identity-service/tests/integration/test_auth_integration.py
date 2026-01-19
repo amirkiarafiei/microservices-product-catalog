@@ -14,7 +14,7 @@ def test_login_admin_success_and_token_decodes(client, jwt_keys):
     body = resp.json()
     assert "access_token" in body
 
-    from src.config import settings
+    from identity.config import settings
 
     decoded = jwt.decode(body["access_token"], jwt_keys.public_key_pem, algorithms=[settings.JWT_ALGORITHM])
     assert decoded["username"] == "admin"

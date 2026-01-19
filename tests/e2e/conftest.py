@@ -184,9 +184,9 @@ def e2e_ctx() -> Generator[E2EContext, None, None]:
 
         # --- Start services ---
         procs: List[subprocess.Popen] = []
-        procs.append(_start_process("identity", ["uv", "run", "uvicorn", "src.main:app", "--port", str(ports["identity"])], project_root / "services/identity-service", identity_env, log_dir))
-        procs.append(_start_process("characteristic", ["uv", "run", "uvicorn", "src.main:app", "--port", str(ports["characteristic"])], project_root / "services/characteristic-service", char_env, log_dir))
-        procs.append(_start_process("specification", ["uv", "run", "uvicorn", "src.main:app", "--port", str(ports["specification"])], project_root / "services/specification-service", spec_env, log_dir))
+        procs.append(_start_process("identity", ["uv", "run", "uvicorn", "identity.main:app", "--port", str(ports["identity"])], project_root / "services/identity-service", identity_env, log_dir))
+        procs.append(_start_process("characteristic", ["uv", "run", "uvicorn", "characteristic.main:app", "--port", str(ports["characteristic"])], project_root / "services/characteristic-service", char_env, log_dir))
+        procs.append(_start_process("specification", ["uv", "run", "uvicorn", "specification.main:app", "--port", str(ports["specification"])], project_root / "services/specification-service", spec_env, log_dir))
         procs.append(_start_process("pricing", ["uv", "run", "uvicorn", "pricing.main:app", "--port", str(ports["pricing"])], project_root / "services/pricing-service", pricing_env, log_dir))
         procs.append(_start_process("offering", ["uv", "run", "uvicorn", "offering.main:app", "--port", str(ports["offering"])], project_root / "services/offering-service", offering_env, log_dir))
         procs.append(_start_process("store", ["uv", "run", "uvicorn", "store.main:app", "--port", str(ports["store"])], project_root / "services/store-service", store_env, log_dir))
@@ -255,7 +255,7 @@ def start_worker(e2e_ctx):
         if kind == "spec":
             return _start_process(
                 "worker_spec",
-                ["uv", "run", "python", "-u", "-c", "from src.saga_worker import run_specification_worker; run_specification_worker()"],
+                ["uv", "run", "python", "-u", "-c", "from specification.saga_worker import run_specification_worker; run_specification_worker()"],
                 project_root / "services/specification-service",
                 env,
                 log_dir,

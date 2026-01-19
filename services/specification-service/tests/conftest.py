@@ -9,9 +9,9 @@ from fastapi.testclient import TestClient
 # Add src to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
-import src.main as main_module  # noqa: E402
-from src.infrastructure.database import get_db  # noqa: E402
-from src.main import admin_required, any_user_required, app  # noqa: E402
+import specification.main as main_module  # noqa: E402
+from specification.infrastructure.database import get_db  # noqa: E402
+from specification.main import admin_required, any_user_required, app  # noqa: E402
 
 
 @pytest.fixture
