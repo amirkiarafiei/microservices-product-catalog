@@ -46,15 +46,27 @@ def run_pricing_worker():
         saga_id = task.get("processInstanceId")
         logger.info(f"Locking prices for offering {offering_id}: {price_ids}")
 
-        for price_id in price_ids:
-            resp = httpx.post(
-                f"{pricing_api_url}/api/v1/prices/{price_id}/lock",
-                json={"saga_id": str(saga_id)},
-                headers=auth_headers,
-                timeout=10.0,
-            )
-            if resp.status_code != 200:
-                raise BpmnError("LOCK_PRICES_FAILED", f"Failed to lock price {price_id}: {resp.text}")
+        locked_successfully = []
+        try:
+            for price_id in price_ids:
+                resp = httpx.post(
+                    f"{pricing_api_url}/api/v1/prices/{price_id}/lock",
+                    json={"saga_id": str(saga_id)},
+                    headers=auth_headers,
+                    timeout=10.0,
+                )
+                if resp.status_code != 200:
+                    raise Exception(f"Failed to lock price {price_id}: {resp.text}")
+                locked_successfully.append(price_id)
+        except Exception as e:
+            # Rollback any partial locks locally before raising BpmnError
+            for price_id in locked_successfully:
+                httpx.post(
+                    f"{pricing_api_url}/api/v1/prices/{price_id}/unlock",
+                    headers=auth_headers,
+                    timeout=10.0,
+                )
+            raise BpmnError("LOCK_PRICES_FAILED", str(e))
         return {}
 
     def handle_unlock_prices(variables: Dict[str, Any], task: Dict[str, Any]) -> Dict[str, Any]:

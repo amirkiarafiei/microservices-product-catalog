@@ -48,7 +48,7 @@
     </bpmn:boundaryEvent>
 
     <!-- Error Flows to Compensation -->
-    <bpmn:sequenceFlow id="Flow_Error1" sourceRef="Event_LockPricesError" targetRef="Activity_RevertToDraft" />
+    <bpmn:sequenceFlow id="Flow_Error1" sourceRef="Event_LockPricesError" targetRef="Activity_UnlockPrices" />
     <bpmn:sequenceFlow id="Flow_Error2" sourceRef="Event_ValidateSpecsError" targetRef="Activity_UnlockPrices" />
     <bpmn:sequenceFlow id="Flow_Error3" sourceRef="Event_CreateStoreEntryError" targetRef="Activity_UnlockPrices" />
     <bpmn:sequenceFlow id="Flow_Error4" sourceRef="Event_ConfirmPublicationError" targetRef="Activity_DeleteStoreEntry" />
